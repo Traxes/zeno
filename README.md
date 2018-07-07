@@ -22,3 +22,7 @@ currently a bad name... but naming is hard!
 # DONE
 
 - Plugin loader
+
+
+# TEST Trigger
+Change this number and check for trigger :D
