@@ -112,7 +112,7 @@ class TestTransformers(unittest.TestCase):
         Testcase to find two Vulnerabilities. One in fgets and one in strcpy
         :return:
         """
-        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test5/bo")
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test6/bo")
         plugin = self._plugins.get_plugin_instance('bo')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.run(bv, deep=True)
@@ -126,6 +126,66 @@ class TestTransformers(unittest.TestCase):
         self.assertIn(0x7e7, addresses), 'Could not find the fgets Bug'
         self.assertIn(0x800, addresses), 'Could not find the strcpy Bug'
         self.assertGreater(highprob, 79), 'Could not follow to find the source'
+
+    def test_buffer_overflow_7(self):
+        """
+        Testcase to find two Vulnerabilities. One in fgets and one in strcpy
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test7/bo")
+        plugin = self._plugins.get_plugin_instance('bo')
+        self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0x7f7, addresses), 'Could not find the fgets Bug'
+        self.assertIn(0x815, addresses), 'Could not find the strncpy Bug'
+        self.assertGreater(highprob, 79), 'Could not follow to find the source'
+
+    def test_buffer_overflow_8(self):
+        """
+        Testcase to find two Vulnerabilities. One in fgets and one in strcpy
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test8/bo")
+        plugin = self._plugins.get_plugin_instance('bo')
+        self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0x800, addresses), 'Could not find the strncpy Bug'
+        self.assertGreater(highprob, 79), 'Could not follow to find the source'
+
+    def test_buffer_overflow_9(self):
+        def test_buffer_overflow_7(self):
+            """
+            Testcase to find two Vulnerabilities. One in fgets and one in strcpy
+            :return:
+            """
+            bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test9/bo")
+            plugin = self._plugins.get_plugin_instance('bo')
+            self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+            plugin.run(bv, deep=True)
+            self.assertIsNone(plugin.error), 'An error occurred'
+            addresses = []
+            highprob = 0
+            for vuln in plugin.vulns:
+                addresses.append(vuln.instr.address)
+                highprob = vuln.probability if vuln.probability > highprob else highprob
+
+            self.assertIn(0x809, addresses), 'Could not find the sprintf Bug'
+            self.assertIn(0x7e7, addresses), 'Could not find the sprintf Bug'
+            self.assertGreater(highprob, 60), 'Could not follow to find the source'
 
 if __name__ == '__main__':
     unittest.main()

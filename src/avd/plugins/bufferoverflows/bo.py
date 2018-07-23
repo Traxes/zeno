@@ -1,6 +1,9 @@
 from .. import Plugin
 from ...reporter.vulnerability import Vulnerability
 from ...helper import binjaWrapper, sources
+import re
+import collections
+import traceback
 from src.avd.core.sliceEngine import slice
 from src.avd.core.sliceEngine.loopDetection import loop_analysis
 from binaryninja import MediumLevelILOperation, RegisterValueType
@@ -9,7 +12,7 @@ __all__ = ['PluginBufferOverflow']
 
 
 class BoParams(object):
-    def __init__(self, dst = None, src = None, n = None, format = None):
+    def __init__(self, dst=None, src=None, n=None, format_ident=None):
         if dst is not None:
             self.dst = dst
         if src is not None:
@@ -17,7 +20,7 @@ class BoParams(object):
         if n is not None:
             self.n = n
         if format is not None:
-            self.Format = format
+            self.Format = format_ident
 
 
 class fake_register(object):
@@ -88,10 +91,10 @@ class PluginBufferOverflow(Plugin):
             'x86_64':0,
         }
         self.bo_symbols = {
-            "_memcpy":BoParams(dst=0,src=1,n=2),
-            "memcpy":BoParams(dst=0,src=1,n=2),
-            "_strncpy":BoParams(dst=0,src=1,n=2),
-            "strncpy":BoParams(dst=0,src=1,n=2),
+            "_memcpy":BoParams(dst=0, src=1, n=2),
+            "memcpy":BoParams(dst=0, src=1, n=2),
+            "_strncpy":BoParams(dst=0, src=1, n=2),
+            "strncpy":BoParams(dst=0, src=1, n=2),
             "_strcpy":BoParams(dst=0, src=1),
             "strcpy":BoParams(dst=0, src=1),
             "_strcat":BoParams(dst=0, src=1),
@@ -99,7 +102,7 @@ class PluginBufferOverflow(Plugin):
             "_strncat":BoParams(dst=0, src=1, n=2),
             "strncat":BoParams(dst=0, src=1, n=2),
             "_sprintf":BoParams(dst=0, src=2),
-            "sprintf":BoParams(dst=0, src=2), ## TODO: Multiple Args & Calc Length of FormatString
+            "sprintf":BoParams(dst=0, format_ident=1, src=2), ## TODO: Multiple Args & Calc Length of FormatString
             "_snprintf":BoParams(dst=0, src=3, n=1),
             "snprintf":BoParams(dst=0, src=3, n=1),
             "_vsprintf":BoParams(dst=0, src=2),
@@ -108,7 +111,7 @@ class PluginBufferOverflow(Plugin):
             "fgets":BoParams(dst=0, n=1),
             "gets":BoParams(dst=0),
             "_gets":BoParams(dst=0),
-            "__isoc99_scanf":BoParams(Format=0),
+            "__isoc99_scanf":BoParams(format_ident=0),
         }
 
     # TODO Add default Blacklist to avoid Parsing e.g. libc
@@ -168,6 +171,49 @@ class PluginBufferOverflow(Plugin):
                                                     pass
                                     self.append_vuln(v)
 
+    def handle_single_destination(self, format_vars, ref, src_size, current_function):
+        for f_str in format_vars:
+            v = ref.function.get_stack_var_at_frame_offset(format_vars[f_str].offset,
+                                                           current_function.start)
+
+            size = 0
+            # TODO Handle arch dependent max Size of int/double etc
+            if "s" in f_str or "c" in f_str:
+                try:
+                    # Adjustment for the format string
+                    size -= len(f_str)
+                    # if This fails there is prob no limitation
+                    size += int(f_str[1:-1])
+                except ValueError:
+                    """
+                    Fall Through since there might be no Format Limitation. Simple calc source size
+                    """
+                    size += src_size
+
+            return size
+
+    def handle_multi_destinations(self, format_vars, ref, src_size, current_function):
+        for f_str in format_vars:
+            v = ref.function.get_stack_var_at_frame_offset(format_vars[f_str].offset,
+                                                           current_function.start)
+            if "s" in f_str or "c" in f_str:
+                buf = ""
+                try:
+                    # if This fails there is prob no limitation
+                    size = int(f_str[1:-1])
+                except ValueError:
+                    """
+                    Fall Through since there might be no Format Limitation. Simple calc source size
+                    """
+                    size = src_size
+                dst_f_size = calc_size(v, current_function)
+                if size >= dst_f_size:
+                    ## Pretty Print
+                    buf = "\t\t\033[93mPotential Overflow!\n\t\t\tdst {} = {}\n\t\t\tsrc {} = {}".format(
+                        v.name, dst_f_size, f_str, size)
+                    v = "\033[93m" + v.name + "\033[0m"
+
+            cf.append(v)
 
     def run(self, bv, deep=True):
         super(PluginBufferOverflow, self).run(bv)
@@ -180,7 +226,7 @@ class PluginBufferOverflow(Plugin):
             symbol = bv.get_symbol_by_raw_name(syms)
             if symbol is not None:
                 for ref in bv.get_code_refs(symbol.address):
-                    function = ref.function
+                    current_function = ref.function
                     addr = ref.address
                     try:
                         bo_src = self.bo_symbols.get(syms).src
@@ -198,7 +244,7 @@ class PluginBufferOverflow(Plugin):
                         traceback.print_exc()
 
                     try:
-                        bo_format = self.bo_symbols.get(syms).format
+                        bo_format = self.bo_symbols.get(syms).Format
                     except AttributeError:
                         bo_format = None
                     except:
@@ -216,39 +262,10 @@ class PluginBufferOverflow(Plugin):
                     cf = []
                     cf.append(syms)
 
-                    ## Handling Format Strings like scanf
-                    if bo_format is not None:
-                        params = []
-                        for i in range(0, len(get_params(ref))):
-                            params.append(function.get_parameter_at(addr, None, i))
-                        format_string = get_constant_string(bv, params[self.bo_symbols.get(syms).format].value)
-                        cf.append("'" + format_string + "'")
-                        params.pop(bo_format)
-                        format_vars = parse_format_string(format_string, params)
-                        for f_str in format_vars:
-                            v = ref.function.get_stack_var_at_frame_offset(format_vars[f_str].offset, function.start)
-                            if "s" in f_str or "c" in f_str:
-                                buf = ""
-                                try:
-                                    ## if This fails there is prob no limitation
-                                    size = int(f_str[1:-1])
-                                except:
-                                    traceback.print_exc()
-                                    size = sys.maxsize
-                                dst_f_size = calc_size(v, function)
-                                if size >= dst_f_size:
-                                    ## Pretty Print
-                                    buf = "\t\t\033[93mPotential Overflow!\n\t\t\tdst {} = {}\n\t\t\tsrc {} = {}".format(
-                                        v.name, dst_f_size, f_str, size)
-                                    v = "\033[93m" + v.name + "\033[0m"
 
-                            cf.append(v)
-
-                        print("{} 0x{:x}\t{}\n{}\033[0m\n".format(ref.function.name, addr, print_f_call(cf), buf))
-                        continue
 
                     if bo_dst is not None:
-                        dst = function.get_parameter_at(addr, None, self.bo_symbols.get(syms).dst)
+                        dst = current_function.get_parameter_at(addr, None, self.bo_symbols.get(syms).dst)
                         if 'StackFrameOffset' not in str(dst.type):
                             if hasattr(dst, "value"):
                                 dst_var = fake_register("<const>")
@@ -261,10 +278,10 @@ class PluginBufferOverflow(Plugin):
                                 dst_size = 0
                         else:
                             dst_var = ref.function.get_stack_var_at_frame_offset(dst.offset + arch_offset,
-                                                                                 function.start)
+                                                                                 current_function.start)
                             if dst_var is None:
-                                dst_var = ref.function.get_stack_var_at_frame_offset(dst.offset, function.start)
-                            dst_size = calc_size(dst_var, function)
+                                dst_var = ref.function.get_stack_var_at_frame_offset(dst.offset, current_function.start)
+                            dst_size = calc_size(dst_var, current_function)
                         cf.append(dst_var)
 
                     if bo_src is None and bo_n is None and bo_format is None:
@@ -286,7 +303,7 @@ class PluginBufferOverflow(Plugin):
                         continue
 
                     if bo_src is not None:
-                        src = function.get_parameter_at(addr, None, self.bo_symbols.get(syms).src)
+                        src = current_function.get_parameter_at(addr, None, self.bo_symbols.get(syms).src)
                         if 'StackFrameOffset' not in str(src.type):
                             if hasattr(src, "value"):
                                 src_var = fake_register("<const>")
@@ -299,14 +316,14 @@ class PluginBufferOverflow(Plugin):
                                 src_size = 0
                         else:
                             src_var = ref.function.get_stack_var_at_frame_offset(src.offset + arch_offset,
-                                                                                 function.start)
+                                                                                 current_function.start)
                             if src_var is None:
-                                src_var = ref.function.get_stack_var_at_frame_offset(src.offset, function.start)
-                            src_size = calc_size(src_var, function)
+                                src_var = ref.function.get_stack_var_at_frame_offset(src.offset, current_function.start)
+                            src_size = calc_size(src_var, current_function)
                         cf.append(src_var)
 
                     if bo_n is not None:
-                        n = function.get_parameter_at(addr, None, self.bo_symbols.get(syms).n)
+                        n = current_function.get_parameter_at(addr, None, self.bo_symbols.get(syms).n)
                         if 'StackFrameOffset' not in str(n.type) and 'ConstantValue' not in str(n.type):
                             try:
                                 if hasattr(n, "reg"):
@@ -327,7 +344,56 @@ class PluginBufferOverflow(Plugin):
                         cf.append(n_val)
 
                     # Print the function
-                    print("{} 0x{:x}\t{}".format(ref.function.name, addr, print_f_call(cf)))
+                    #print("{} 0x{:x}\t{}".format(ref.function.name, addr, print_f_call(cf)))
+
+
+                    ## Handling Format Strings like scanf
+                    if bo_format is not None:
+                        params = []
+                        for i in range(0, len(get_params(ref))):
+                            params.append(current_function.get_parameter_at(addr, None, i))
+                        format_string = get_constant_string(bv, params[self.bo_symbols.get(syms).Format].value)
+                        cf.insert(self.bo_symbols.get(syms).Format+1, "'" + format_string + "'")
+                        params.pop(bo_format)
+                        format_vars = parse_format_string(format_string, params)
+                        if dst_var is not None:
+                            size = self.handle_single_destination(format_vars, ref, src_size, current_function)
+                            size += len(format_string)
+                        else:
+                            size = self.handle_multi_destinations(format_vars, ref, src_size, current_function)
+
+                        if size > dst_size:
+                            text = "{} 0x{:x}\t{}\n".format(ref.function.name, addr, print_f_call(cf))
+                            text += "\t\tPotential Overflow!\n"
+                            text += "\t\t\tdst {} = {}\n".format(dst_var.name, dst_size)
+                            text += "\t\t\tsrc {} = {}\n".format(src_var.name, src_size)
+                            text += "\t\t\ttotal_length = {}\n".format(size)
+                            instr = binjaWrapper.get_medium_il_instruction(bv, ref.address)
+                            v = Vulnerability("Potential Overflow",
+                                              text,
+                                              instr,
+                                              "Format function {} can overflow the "
+                                              "destination Buffer with {} Bytes".format(syms, size-dst_size),
+                                              80)
+                            self.vulns.append(v)
+                        elif size == dst_size:
+                            # Check if the Format String ends the string properly
+                            last_format = format_vars.keys()[-1]
+                            ending_strings = ["\n", "\r", "\x00"]
+                            if not any(x in format_string[format.rfind(last_format)+len(last_format):] for x in
+                                       ending_strings):
+                                text = "{} 0x{:x}\t{}\n".format(ref.function.name, addr, print_f_call(cf))
+                                text += "\t\tPotential Overflow!\n"
+                                text += "\t\t\tdst {} = {}\n".format(dst_var.name, dst_size)
+                                instr = binjaWrapper.get_medium_il_instruction(bv, ref.address)
+                                v = Vulnerability("Potential Overflow",
+                                                  text,
+                                                  instr,
+                                                  "The source and destination size are equal. "
+                                                  "There might be no Nullbyte/String delimiter",
+                                                  60)
+                                self.vulns.append(v)
+                        continue
 
                     if bo_src is not None and bo_n is None and bo_dst is not None:
                         if src_size > dst_size:
@@ -408,14 +474,4 @@ class PluginBufferOverflow(Plugin):
                                 pass
                                 #print("\t\t\033[93mPotential Overflow!")
 
-                    if bo_dst is not None:
-                        #pass
-                        print("\t\t\tdst {} = {}".format(dst_var.name, dst_size))
-                    if bo_src is not None:
-                        #pass
-                        print("\t\t\tsrc {} = {}".format(src_var.name, src_size))
-                    if bo_n is not None and hasattr(n, "name"):
-                        #pass
-                        print("\t\t\tn = {}".format(n.name))
-                    print("\033[0m")
 
