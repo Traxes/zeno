@@ -56,7 +56,8 @@ def main():
         print "arch: {0} | platform: {1}".format(bv.arch, bv.platform)
         bv.update_analysis_and_wait()
         bo = plugins.get_plugin_instance("bo")
-        bo.run(bv)
+        bo.run(bv, args.deep)
+        del bo
 
     return
 

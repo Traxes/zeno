@@ -22,3 +22,10 @@ currently a bad name... but naming is hard!
 # DONE
 
 - Plugin loader
+
+
+
+
+Buffer Overflows:
+gets <- always
+char buf[123]; std::cin>>buf 

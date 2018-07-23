@@ -3,6 +3,7 @@ Loader shamelessly stolen from Niklaus Schiess deen ;-) https://github.com/takes
 """
 from binaryninja.binaryview import BinaryView
 import sys
+from collections import Counter
 
 #from .bo import PluginBufferOverflow
 
@@ -25,8 +26,15 @@ class Plugin(object):
     # plugin name.
     aliases = []
 
+    # List of vulnerabilities found.
+    vulns = []
+
     def __init__(self):
         self._binaryView = BinaryView
+
+    def __del__(self):
+        for vuln in self.vulns:
+            vuln.cmd_print_finding()
 
     @property
     def bv(self):
@@ -35,6 +43,15 @@ class Plugin(object):
     @bv.setter
     def bv(self, bv):
         self._binaryView = bv
+
+    def append_vuln(self, v):
+        """
+        This function prevents to have duplicate vulnerabilties
+        :param Vulnerability v:
+        :return None:
+        """
+        if not [e_vuln for e_vuln in self.vulns if not e_vuln != v]:
+            self.vulns.append(v)
 
     @staticmethod
     def prerequisites():

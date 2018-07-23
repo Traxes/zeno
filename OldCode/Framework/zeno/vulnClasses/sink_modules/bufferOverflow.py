@@ -73,6 +73,12 @@ def calc_size(var, func):
 
 # TODO Add default Blacklist to avoid Parsing e.g. libc
 def deep_function_analysis(bv):
+    """
+    This Function will run through the binary and check for compiler optimized memcpys.
+    Quite nice to have.
+    :param bv:
+    :return:
+    """
     found_vulns = []
     for func in bv.functions:
         func_mlil = func.medium_level_il
