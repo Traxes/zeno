@@ -29,8 +29,11 @@ class Plugin(object):
     # List of vulnerabilities found.
     vulns = []
 
-    def __init__(self):
-        self._binaryView = BinaryView
+    # BinaryView from BinaryNinja
+    _binaryView = None
+
+    def __init__(self, bv):
+        self._binaryView = bv
 
     def __del__(self):
         for vuln in self.vulns:

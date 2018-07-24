@@ -29,3 +29,16 @@ def get_mlil_function(bv, addr):
     return bv.get_functions_containing(addr)[0].medium_level_il
 
 
+def get_constant_string(bv, addr):
+    """
+    Returns the full string in memory
+    :param bv: the BinaryView:
+    :param addr: Address where the string is:
+    :return string:
+    """
+    str_len = 0
+    curr = bv.read(addr, 1).encode('hex')
+    while (curr != "2e") and (curr != "00"):
+        str_len += 1
+        curr = bv.read(addr + str_len, 1).encode('hex')
+    return bv.read(addr, str_len)

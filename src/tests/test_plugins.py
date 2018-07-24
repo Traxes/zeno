@@ -8,6 +8,7 @@ class TestTransformers(unittest.TestCase):
     def setUp(self):
         self._plugins = PluginLoader()
 
+
     def test_buffer_overflow_1(self):
         """
         Testcase to find vuln if dest and source size are known but n is <undertermined>
@@ -16,6 +17,7 @@ class TestTransformers(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test1/bo")
         plugin = self._plugins.get_plugin_instance('bo')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.vulns = []
         plugin.run(bv, False)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
@@ -25,7 +27,7 @@ class TestTransformers(unittest.TestCase):
             highprob = vuln.probability if vuln.probability > highprob else highprob
 
         self.assertIn(0x829, addresses), 'Could not find the Bug'
-        self.assertGreater(highprob, 90), 'Found the initial one but could not follow to get the source'
+        self.assertGreater(highprob, 89), 'Found the initial one but could not follow to get the source'
 
     def test_buffer_overflow_2(self):
         """
@@ -35,6 +37,7 @@ class TestTransformers(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test2/bo")
         plugin = self._plugins.get_plugin_instance('bo')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.vulns = []
         plugin.run(bv, False)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
@@ -55,6 +58,7 @@ class TestTransformers(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test3/bo")
         plugin = self._plugins.get_plugin_instance('bo')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.vulns = []
         plugin.run(bv, False)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
@@ -76,6 +80,7 @@ class TestTransformers(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test4/bo")
         plugin = self._plugins.get_plugin_instance('bo')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.vulns = []
         plugin.run(bv, False)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
@@ -96,6 +101,7 @@ class TestTransformers(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test5/bo")
         plugin = self._plugins.get_plugin_instance('bo')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.vulns = []
         plugin.run(bv, deep=True)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
@@ -115,6 +121,7 @@ class TestTransformers(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test6/bo")
         plugin = self._plugins.get_plugin_instance('bo')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.vulns = []
         plugin.run(bv, deep=True)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
@@ -135,6 +142,7 @@ class TestTransformers(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test7/bo")
         plugin = self._plugins.get_plugin_instance('bo')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.vulns = []
         plugin.run(bv, deep=True)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
@@ -155,6 +163,7 @@ class TestTransformers(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test8/bo")
         plugin = self._plugins.get_plugin_instance('bo')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.vulns = []
         plugin.run(bv, deep=True)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
@@ -167,25 +176,119 @@ class TestTransformers(unittest.TestCase):
         self.assertGreater(highprob, 79), 'Could not follow to find the source'
 
     def test_buffer_overflow_9(self):
-        def test_buffer_overflow_7(self):
-            """
-            Testcase to find two Vulnerabilities. One in fgets and one in strcpy
-            :return:
-            """
-            bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test9/bo")
-            plugin = self._plugins.get_plugin_instance('bo')
-            self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
-            plugin.run(bv, deep=True)
-            self.assertIsNone(plugin.error), 'An error occurred'
-            addresses = []
-            highprob = 0
-            for vuln in plugin.vulns:
-                addresses.append(vuln.instr.address)
-                highprob = vuln.probability if vuln.probability > highprob else highprob
+        """
+        Testcase to find two Vulnerabilities. One in fgets and one in strcpy
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test9/bo")
+        plugin = self._plugins.get_plugin_instance('bo')
+        self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.vulns = []
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
 
-            self.assertIn(0x809, addresses), 'Could not find the sprintf Bug'
-            self.assertIn(0x7e7, addresses), 'Could not find the sprintf Bug'
-            self.assertGreater(highprob, 60), 'Could not follow to find the source'
+        self.assertIn(0x809, addresses), 'Could not find the sprintf Bug'
+        self.assertIn(0x7e7, addresses), 'Could not find the sprintf Bug'
+        self.assertGreater(highprob, 60), 'Could not follow to find the source'
+
+    def test_buffer_overflow_10(self):
+        """
+        Testcase to find no Vulnerabilities.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test10/bo")
+        plugin = self._plugins.get_plugin_instance('bo')
+        self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+        self.assertFalse(bool(addresses)), 'Found bugs where no bugs are'
+
+    def test_buffer_overflow_11(self):
+        """
+        Testcase to find one Vulnerability in scanf.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test11/bo")
+        plugin = self._plugins.get_plugin_instance('bo')
+        self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0x754, addresses), 'Could not find the scanf Bug'
+        self.assertGreater(highprob, 60), 'Could not follow to find the source'
+
+    def test_buffer_overflow_12(self):
+        """
+        Testcase to find a scanf Vulnerability.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test12/bo")
+        plugin = self._plugins.get_plugin_instance('bo')
+        self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0x754, addresses), 'Could not find the scanf Bug'
+        self.assertGreater(highprob, 60), 'Could not follow to find the source'
+
+    def test_buffer_overflow_12(self):
+        """
+        Testcase to find two scanf Vulnerabilities.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test13/bo")
+        plugin = self._plugins.get_plugin_instance('bo')
+        self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0x754, addresses), 'Could not find the first scanf Bug'
+        self.assertIn(0x76c, addresses), 'Could not find the second scanf Bug'
+        self.assertGreater(highprob, 60), 'Could not follow to find the source'
+
+    def test_buffer_overflow_13(self):
+        """
+        Testcase to find an often occurring memcpy pattern.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/TestMcpy/bo")
+        plugin = self._plugins.get_plugin_instance('bo')
+        self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0x7cc, addresses), 'Could not find the first scanf Bug'
+        self.assertGreater(highprob, 79), 'Could not follow to find the source'
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,4 +1,4 @@
-# Credits: Josh Watson @joshwatson
+# Credits: Josh Watson @joshwatson for slicing
 from binaryninja import SSAVariable, Variable, MediumLevelILOperation
 from src.avd.helper import binjaWrapper
 
@@ -41,10 +41,10 @@ def do_forward_slice(instruction, function):
 
 
 def handle_backward_functions(bv, var_index, function):
-    print("Handling Backward Function")
     for refs in bv.get_code_refs(function.source_function.start):
         instruction = binjaWrapper.get_medium_il_instruction(bv, refs.address)
         # instruction = refs.function.get_low_level_il_at(refs.address).mapped_medium_level_il
+        # TODO Delete?
         call_instr_index = instruction.instr_index
         new_var = instruction.ssa_form.vars_read[var_index]
         new_instr_index = instruction.function.ssa_form.get_ssa_var_definition(new_var)
@@ -68,6 +68,7 @@ def get_sources_of_variable(bv, var):
                                 # Resolv call.dest
     return sources
 
+
 def get_ssa_manual_var_uses(func, var):
     variables = []
     for bb in func:
@@ -76,6 +77,7 @@ def get_ssa_manual_var_uses(func, var):
                 if v.identifier == var.identifier:
                     variables.append(instr.instr_index)
     return variables
+
 
 def get_manual_var_uses(func, var):
     variables = []
@@ -86,9 +88,25 @@ def get_manual_var_uses(func, var):
                     variables.append(instr.instr_index)
     return variables
 
+
+def get_sources(bv, ref, instr, n):
+    slice_src, visited_src = do_backward_slice(
+        bv,
+        instr,
+        binjaWrapper.get_ssa_var_from_mlil_instruction(instr, n),
+        binjaWrapper.get_mlil_function(bv, ref.address)
+    )
+    return get_sources_of_variable(bv, slice_src)
+
+
+def get_var_from_register(bv, instr, n):
+    mlil_function = binjaWrapper.get_mlil_function(bv, instr.address)
+    ssa_var = instr.ssa_form.vars_read[n]
+    mlil_function[mlil_function.get_ssa_var_definition(ssa_var)]
+
+
 def do_backward_slice(bv, instruction, var_pass, func):
     """
-
     :param bv:
     :param instruction:
     :param var_pass:
