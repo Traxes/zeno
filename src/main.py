@@ -55,9 +55,10 @@ def main():
         bv = binaryninja.BinaryViewType.get_view_of_file(filename)
         print "arch: {0} | platform: {1}".format(bv.arch, bv.platform)
         bv.update_analysis_and_wait()
-        bo = plugins.get_plugin_instance("bo")
-        bo.run(bv, args.deep)
-        del bo
+        for name, _ in plugins.available_plugins:
+            plugin = plugins.get_plugin_instance(name)
+            plugin.run(bv, args.deep)
+            del plugin
 
     return
 

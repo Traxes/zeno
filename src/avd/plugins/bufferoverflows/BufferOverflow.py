@@ -72,7 +72,7 @@ def print_f_call(arg):
 
 
 class PluginBufferOverflow(Plugin):
-    name = "bo"
+    name = "PluginBufferOverflow"
     display_name = "Buffer Overflow"
     cmd_name = "bo"
     cmd_help = "Search for Known Buffer Overflow patterns"

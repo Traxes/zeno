@@ -5,6 +5,8 @@ Loader shamelessly stolen from Niklaus Schiess deen ;-) https://github.com/takes
 import sys
 import inspect
 import pprint
+import pkgutil
+import importlib
 import avd.plugins.bufferoverflows
 
 class PluginLoader(object):
@@ -45,28 +47,44 @@ class PluginLoader(object):
         pp = pprint.PrettyPrinter(indent=4)
         return pp.pformat([p[1].display_name for p in self.available_plugins])
 
-    def _get_plugin_classes_from_module(self, module):
+    def _get_plugin_classes_from_module(self, package):
         """An internal helper function that extracts
         all plugin classes from modules in the plugins
         folder."""
         output = []
-        for m in inspect.getmembers(module, inspect.ismodule):
-            for c in inspect.getmembers(m[1], inspect.isclass):
+        for m in self._get_submodules_from_namespace_package(package):
+            module = importlib.import_module(m, package=None)
+            for c in inspect.getmembers(module, inspect.isclass):
+                # Only classes that start with DeenPlugin will be loaded.
                 if c[0].startswith('Plugin') and \
                         len(c[0].replace('Plugin', '')) != 0:
+                    # Call the prerequisites() function before loading plugin.
+                    # TODO implement at later stage for more commandline arguments
                     if c[1].prerequisites():
-                        # TODO implement at later stage for more commandline arguments
+                        # Check if the plugin wants to add additional CLI arguments.
                         #if self.argparser:
-                            #if getattr(c[1], 'cmd_name', None) and c[1].cmd_name and \
-                            #        getattr(c[1], 'cmd_help', None) and c[1].cmd_help:
-                            #    add_argparser_func = getattr(c[1], 'add_argparser', None)
-                            #    if not self._subargparser and self._argparser:
-                            #        self._subargparser = self._argparser.add_subparsers(dest='plugin_cmd')
-                            #    add_argparser_func(self._subargparser, c[1].cmd_name,
-                            #                       c[1].cmd_help, c[1].aliases)
+                        #    if getattr(c[1], 'cmd_name', None) and c[1].cmd_name and \
+                        #            getattr(c[1], 'cmd_help', None) and c[1].cmd_help:
+                        #        add_argparser_func = getattr(c[1], 'add_argparser', None)
+                        #        if not self._subargparser and self._argparser:
+                        #            self._subargparser = self._argparser.add_subparsers(dest='plugin_cmd')
+                        #        add_argparser_func(self._subargparser, c[1].cmd_name,
+                        #                           c[1].cmd_help, c[1].aliases)
                         output.append(c)
+                    #else:
+                    #    LOGGER.warning('Prerequisits for plugin {} not met'.format(c[0]))
         else:
             return output
+
+
+    def _get_submodules_from_namespace_package(self, package):
+        """An internal helper function that returns
+        a list of submodules in the given namespace
+        package."""
+        output = []
+        for importer, module_name, _ in pkgutil.iter_modules(package.__path__, package.__name__ + '.'):
+            output.append(module_name)
+        return output
 
     def load_plugins(self):
         """

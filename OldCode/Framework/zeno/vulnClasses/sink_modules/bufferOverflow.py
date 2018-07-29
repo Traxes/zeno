@@ -123,7 +123,10 @@ def deep_function_analysis(bv):
 
 
 
-class BufferOverflow(object):
+class PluginBufferOverflow(object):
+
+    self.name = "PluginBufferOverflow"
+
     def __init__(self):
         self.arch_offsets = {
             'armv7':4,
