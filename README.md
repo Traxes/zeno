@@ -15,6 +15,7 @@ currently a bad name... but naming is hard!
 
 - Plugins
     - BufferOverflow
+    - Out of Bounds
     - IntegerOverflow
     - Format String
     - Uninitialized Memory
@@ -23,7 +24,9 @@ currently a bad name... but naming is hard!
 
 - Plugin loader
 
+# Resources & Similar Projects
 
+- https://github.com/cetfor/PaperMachete
 
 
 Buffer Overflows:

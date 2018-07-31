@@ -15,7 +15,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test1/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
         plugin.run(bv, False)
@@ -35,7 +35,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test2/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
         plugin.run(bv, False)
@@ -56,7 +56,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test3/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
         plugin.run(bv, False)
@@ -78,7 +78,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test4/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
         plugin.run(bv, False)
@@ -99,7 +99,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test5/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
         plugin.run(bv, deep=True)
@@ -119,7 +119,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test6/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
         plugin.run(bv, deep=True)
@@ -140,7 +140,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test7/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
         plugin.run(bv, deep=True)
@@ -161,7 +161,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test8/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
         plugin.run(bv, deep=True)
@@ -181,7 +181,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test9/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
         plugin.run(bv, deep=True)
@@ -202,7 +202,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test10/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.run(bv, deep=True)
         self.assertIsNone(plugin.error), 'An error occurred'
@@ -219,7 +219,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test11/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.run(bv, deep=True)
         self.assertIsNone(plugin.error), 'An error occurred'
@@ -238,7 +238,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test12/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.run(bv, deep=True)
         self.assertIsNone(plugin.error), 'An error occurred'
@@ -257,7 +257,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/Test13/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.run(bv, deep=True)
         self.assertIsNone(plugin.error), 'An error occurred'
@@ -277,7 +277,7 @@ class TestTransformers(unittest.TestCase):
         :return:
         """
         bv = binaryninja.BinaryViewType.get_view_of_file("./tests/bin/TestMcpy/bo")
-        plugin = self._plugins.get_plugin_instance('bo')
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.run(bv, deep=True)
         self.assertIsNone(plugin.error), 'An error occurred'
@@ -289,6 +289,35 @@ class TestTransformers(unittest.TestCase):
 
         self.assertIn(0x7cc, addresses), 'Could not find the first scanf Bug'
         self.assertGreater(highprob, 79), 'Could not follow to find the source'
+
+    def CWE121_Stack_Based_Buffer_Overflow__char_type_overrun_memcpy_01(self):
+        """
+        @description
+        CWE: 121 Stack Based Buffer Overflow
+        Sinks: type_overrun_memcpy
+            GoodSink: Perform the memcpy() and prevent overwriting part of the structure
+            BadSink : Overwrite part of the structure by incorrectly using the sizeof(struct) in memcpy()
+        Flow Variant: 01 Baseline
+        Testcase to find an often occurring memcpy pattern.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/juliet/CWE121_Stack_Based_Buffer_Overflow/s01/"
+                                                         "CWE121_Stack_Based_Buffer_Overflow__char_type_overrun_"
+                                                         "memcpy_01.out")
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
+        self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0xd22, addresses), 'Could not find the memcpy Bug'
+        self.assertGreater(highprob, 79), 'Could not follow to find the source'
+
+
 
 if __name__ == '__main__':
     unittest.main()

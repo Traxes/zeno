@@ -58,7 +58,7 @@ def main():
         for name, _ in plugins.available_plugins:
             plugin = plugins.get_plugin_instance(name)
             plugin.run(bv, args.deep)
-            del plugin
+            del plugin # This will print the vulns.
 
     return
 

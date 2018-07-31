@@ -1,6 +1,6 @@
-from .. import Plugin
-from ...reporter.vulnerability import Vulnerability
-from ...helper import binjaWrapper, sources
+from src.avd.plugins import Plugin
+from src.avd.reporter.vulnerability import Vulnerability
+from src.avd.helper import binjaWrapper, sources
 import re
 import collections
 import traceback
@@ -85,6 +85,8 @@ class PluginBufferOverflow(Plugin):
         }
         self.bv = bv
         self.bo_symbols = {
+            "_memmove": BoParams(dst=0, src=1, n=2),
+            "memmove": BoParams(dst=0, src=1, n=2),
             "_memcpy": BoParams(dst=0, src=1, n=2),
             "memcpy": BoParams(dst=0, src=1, n=2),
             "_strncpy": BoParams(dst=0, src=1, n=2),
@@ -131,6 +133,11 @@ class PluginBufferOverflow(Plugin):
                                 dst, dst_visited_instr = slice.do_backward_slice(self.bv, instr,
                                                                                  instr.ssa_form.vars_read[0],
                                                                                  func_mlil.ssa_form)
+                                # TODO This is just a hotfix when src or dst is None.
+                                # TODO problem by CWE121_Stack_Based_Buffer_Overflow__char_type_overrun_memcpy_01
+                                if not src or not dst:
+                                    continue
+
                                 src_size = calc_size(src, func)
                                 dst_size = calc_size(dst, func)
                                 if src_size > dst_size:

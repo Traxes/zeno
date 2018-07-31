@@ -1,1 +1,8 @@
 *.bndb
+*.out
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so

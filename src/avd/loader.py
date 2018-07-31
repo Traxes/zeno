@@ -7,7 +7,7 @@ import inspect
 import pprint
 import pkgutil
 import importlib
-import avd.plugins.bufferoverflows
+import avd.plugins
 
 class PluginLoader(object):
     """
@@ -91,7 +91,7 @@ class PluginLoader(object):
         Load the available Plugins
         :return:
         """
-        self.plugins = self._get_plugin_classes_from_module(avd.plugins.bufferoverflows)
+        self.plugins = self._get_plugin_classes_from_module(avd.plugins)
 
     def plugin_available(self, name):
         """Returns True if the given plugin name is available,
