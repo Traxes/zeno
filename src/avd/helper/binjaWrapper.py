@@ -28,6 +28,12 @@ def get_mlil_function(bv, addr):
     # Assuming that there is only one matching function for the given address.
     return bv.get_functions_containing(addr)[0].medium_level_il
 
+def get_basic_block_from_instr(bv, addr):
+    try:
+        bb = bv.get_basic_blocks_at(addr)[0]
+        return bb
+    except IndexError:
+        return None
 
 def get_constant_string(bv, addr):
     """

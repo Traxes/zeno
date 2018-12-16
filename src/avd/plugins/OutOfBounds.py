@@ -25,7 +25,7 @@ class PluginOutOfBounds(Plugin):
     def set_bv(self, bv):
         self.bv = bv
 
-    def run(self, bv=None, deep=None):
+    def run(self, bv=None, deep=None, traces=None):
         super(PluginOutOfBounds, self).__init__(bv)
         self.find_possible_arrays()
         return
@@ -45,4 +45,5 @@ class PluginOutOfBounds(Plugin):
                             #if loop_analysis(bb):
                         # TODO find whether the var is used either in a loop or access directly
                         # https://github.com/cetfor/PaperMachete/blob/master/queries/cwe_788_v1.py
-                        print(instr)
+                        pass
+                        #print(instr)

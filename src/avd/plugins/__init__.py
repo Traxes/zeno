@@ -4,6 +4,7 @@ Loader shamelessly stolen from Niklaus Schiess deen ;-) https://github.com/takes
 from binaryninja.binaryview import BinaryView
 import sys
 from collections import Counter
+from ..helper.binjaWrapper import get_basic_block_from_instr
 
 #from .bo import PluginBufferOverflow
 
@@ -29,6 +30,9 @@ class Plugin(object):
     # List of vulnerabilities found.
     vulns = []
 
+    # Traces
+    _traces = []
+
     # BinaryView from BinaryNinja
     _binaryView = None
 
@@ -37,7 +41,11 @@ class Plugin(object):
 
     def __del__(self):
         for vuln in self.vulns:
-            vuln.cmd_print_finding()
+            if len(self._traces) > 0:
+                bb = get_basic_block_from_instr(self.bv, vuln.instr.address)
+                vuln.cmd_print_finding(self._traces, bb)
+            else:
+                vuln.cmd_print_finding()
 
     @property
     def bv(self):
@@ -46,6 +54,9 @@ class Plugin(object):
     @bv.setter
     def bv(self, bv):
         self._binaryView = bv
+
+    def set_traces(self, traces):
+        self._traces = traces
 
     def append_vuln(self, v):
         """

@@ -4,6 +4,8 @@ import binaryninja
 import argparse
 import os
 from avd.loader import PluginLoader
+from avd.helper.drcov import DrcovData
+import ntpath
 
 
 def is_valid_file(parser, arg):
@@ -18,6 +20,9 @@ def is_valid_file(parser, arg):
     else:
         return arg  # return an open file handle
 
+def path_leaf(path):
+    head, tail = ntpath.split(path)
+    return tail or ntpath.basename(head)
 
 def main():
     """
@@ -41,6 +46,12 @@ def main():
     parser.add_argument("--dot", default=None,
                         dest="outputfile", help="Write graph to a dotfile")
 
+    parser.add_argument("--cov", default=None,
+                        dest="coverage", help="Provide a coverage file for better filtering")
+
+    parser.add_argument("--cov_folder", default=None,
+                        dest="cov_folder", help="Provide a folder with coverage files for better filtering")
+
     plugins = PluginLoader(argparser=parser)
     args = parser.parse_args()
 
@@ -53,11 +64,22 @@ def main():
     for filename in input_file:
         print("Analyzing {0}".format(filename))
         bv = binaryninja.BinaryViewType.get_view_of_file(filename)
-        print "arch: {0} | platform: {1}".format(bv.arch, bv.platform)
+        if args.coverage:
+            print("Single Coverage given")
+            cov = DrcovData(args.coverage)
+            cov_bb = cov.get_blocks_by_module(path_leaf(filename))
+            # TODO Insert to Plugin Analyser
+        if args.cov_folder:
+            # TODO Make multi Coverage possible
+            pass
+
+        print("arch: {0} | platform: {1}".format(bv.arch, bv.platform))
         bv.update_analysis_and_wait()
         for name, _ in plugins.available_plugins:
             plugin = plugins.get_plugin_instance(name)
             plugin.run(bv, args.deep)
+            if args.coverage:
+                plugin.set_traces(cov_bb)
             del plugin # This will print the vulns.
 
     return

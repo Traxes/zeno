@@ -13,12 +13,15 @@ currently a bad name... but naming is hard!
 
 - GUI
 
+- Extern Interface in DLLs
+
 - Plugins
     - BufferOverflow
     - Out of Bounds
     - IntegerOverflow
     - Format String
     - Uninitialized Memory
+        - Graph Slicing!
 
 # DONE
 

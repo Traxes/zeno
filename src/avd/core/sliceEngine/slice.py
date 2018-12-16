@@ -40,6 +40,45 @@ def do_forward_slice(instruction, function):
     return visited_instructions
 
 
+
+# TODO Rework a new function to filter for single variables hitting functions
+def do_forward_slice_with_variable(instruction, function):
+    # if no variables written, return the empty set.
+    if not instruction.ssa_form.vars_written:
+        return set()
+
+    instruction_queue = {}
+
+    for var in instruction.ssa_form.vars_written:
+        if var.var.name:
+            for use in function.ssa_form.get_ssa_var_uses(var):
+                instruction_queue.update({use: var})
+
+    visited_instructions = [(instruction.ssa_form.instr_index, None)]
+
+
+    while instruction_queue:
+
+        visit_index = instruction_queue.popitem()
+
+        if visit_index is None or visit_index[0] in visited_instructions:
+            continue
+
+        instruction_to_visit = function[visit_index[0]]
+
+        if instruction_to_visit is None:
+            continue
+
+        for var in instruction_to_visit.ssa_form.vars_written:
+            if var.var.name:
+                for use in function.ssa_form.get_ssa_var_uses(var):
+                    instruction_queue.update({use: var})
+
+        visited_instructions.append(visit_index)
+
+    return visited_instructions
+
+
 def handle_backward_functions(bv, var_index, function):
     for refs in bv.get_code_refs(function.source_function.start):
         instruction = binjaWrapper.get_medium_il_instruction(bv, refs.address)
