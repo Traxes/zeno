@@ -128,6 +128,16 @@ def get_manual_var_uses(func, var):
     return variables
 
 
+def get_manual_var_uses_custom_bb(bb_paths, var):
+    variables = []
+    for bb in bb_paths:
+        for instr in bb:
+            for v in (instr.vars_read + instr.vars_written):
+                if v.identifier == var.identifier:
+                    variables.append(instr.instr_index)
+    return variables
+
+
 def get_sources(bv, ref, instr, n):
     slice_src, visited_src = do_backward_slice(
         bv,
@@ -137,6 +147,14 @@ def get_sources(bv, ref, instr, n):
     )
     return get_sources_of_variable(bv, slice_src)
 
+def get_sources_with_mlil_function(bv, func, instr, n):
+    slice_src, visited_src = do_backward_slice(
+        bv,
+        instr,
+        binjaWrapper.get_ssa_var_from_mlil_instruction(instr, n),
+        func.medium_level_il
+    )
+    return get_sources_of_variable(bv, slice_src)
 
 def get_var_from_register(bv, instr, n):
     mlil_function = binjaWrapper.get_mlil_function(bv, instr.address)

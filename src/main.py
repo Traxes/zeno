@@ -77,10 +77,11 @@ def main():
         bv.update_analysis_and_wait()
         for name, _ in plugins.available_plugins:
             plugin = plugins.get_plugin_instance(name)
+            plugin.vulns = []
             plugin.run(bv, args.deep)
             if args.coverage:
                 plugin.set_traces(cov_bb)
-            del plugin # This will print the vulns.
+            del plugin  # This will print the vulns.
 
     return
 

@@ -149,7 +149,7 @@ class Vertex :
                    self.get_successor_indices())
 
 
-class Graph :
+class Graph:
 
     def __init__ (self, entry_index=None) :
         # When we create vertices, if an index is not specified, we increment
@@ -558,3 +558,34 @@ class Graph :
 
     def get_vertices_data (self) :
         return map(lambda x: x.data, [self.vertices[y] for y in self.vertices])
+
+
+    def _find_all_paths(self, node, nodes, node_count, result, rec=0):
+        if node not in nodes:
+            nodes.append(node)
+
+        if len(nodes) == node_count or len(self.get_vertex_from_index(node).get_successor_indices()) == 0:
+            if nodes not in result:
+                result.append(nodes)
+            return
+
+        if rec > (node_count * node_count) or nodes in result:
+            return
+
+
+
+        for i in self.get_vertex_from_index(node).get_successor_indices():
+            self._find_all_paths(i, nodes[:], node_count, result, rec + 1)
+
+
+    def compute_all_paths(self):
+        paths = list()
+        self._find_all_paths(self.vertices.keys()[0], list(), len(self.vertices), paths)
+
+        path_basic_blocks = []
+        for path in paths:
+            tmp_blocks = []
+            for index in path:
+                tmp_blocks.append(self.get_vertex_from_index(index).data.basic_block)
+            path_basic_blocks.append(tmp_blocks)
+        return path_basic_blocks

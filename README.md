@@ -4,6 +4,9 @@ currently a bad name... but naming is hard!
 
 # TODO
 
+- Beauty Code
+    - Prefix internal Methods with _
+
 - Core
     - Slicing
     - Arch Support
@@ -22,6 +25,10 @@ currently a bad name... but naming is hard!
     - Format String
     - Uninitialized Memory
         - Graph Slicing!
+        
+# False Positive
+- CWE457_Use_of_Uninitialized_Variable__char_pointer_17_bad()
+    - False positive on goodG2B
 
 # DONE
 

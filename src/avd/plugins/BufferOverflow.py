@@ -46,6 +46,9 @@ def parse_format_string(s, params):
 
 
 def calc_size(var, func):
+    if SSAVariable == type(var):
+        var = var.var
+
     if len(func.stack_layout) - 1 == func.stack_layout.index(var):
         return abs(var.storage)
     else:
@@ -62,9 +65,6 @@ def print_f_call(arg):
             fun_c += ar
         except TypeError:
             fun_c += ar.name
-        # TODO delete it
-        except:
-            traceback.print_exc()
         if i < (len(arg)-1):
             fun_c += ', '
     fun_c += ");"
@@ -463,30 +463,30 @@ class PluginBufferOverflow(Plugin):
                                         v.append_reason("The source buffer is also bigger than the destination Buffer")
                                 self.vulns.append(v)
                                 continue
-
-                    if bo_n is not None and n.is_constant:
-                        # N is constant
-                        if n.value > dst_size:
-                            """
-                            N Value is bigger than dst size. 
-                            """
-                            text = "{} 0x{:x}\t{}\n".format(ref.function.name, addr, print_f_call(cf))
-                            text += "\t\tPotential Overflow!\n"
-                            text += "\t\t\tdst {} = {}\n".format(dst_var.name, dst_size)
-                            text += "\t\t\tn {} = {}\n".format(str(n), n_val)
-                            instr = binjaWrapper.get_medium_il_instruction(bv, ref.address)
-                            v = Vulnerability("Potential Overflow",
-                                              text,
-                                              instr,
-                                              "The amount of Copied bytes is bigger than the destination Buffer",
-                                              100)
-                            self.vulns.append(v)
-                        elif n.value == dst_size:
-                            """
-                            Might indicate a Off-By-One 
-                            """
-                            # TODO
-                            pass
+                    if hasattr(n, "is_constant"):
+                        if bo_n is not None and n.is_constant:
+                            # N is constant
+                            if n.value > dst_size:
+                                """
+                                N Value is bigger than dst size. 
+                                """
+                                text = "{} 0x{:x}\t{}\n".format(ref.function.name, addr, print_f_call(cf))
+                                text += "\t\tPotential Overflow!\n"
+                                text += "\t\t\tdst {} = {}\n".format(dst_var.name, dst_size)
+                                text += "\t\t\tn {} = {}\n".format(str(n), n_val)
+                                instr = binjaWrapper.get_medium_il_instruction(bv, ref.address)
+                                v = Vulnerability("Potential Overflow",
+                                                  text,
+                                                  instr,
+                                                  "The amount of Copied bytes is bigger than the destination Buffer",
+                                                  100)
+                                self.vulns.append(v)
+                            elif n.value == dst_size:
+                                """
+                                Might indicate a Off-By-One 
+                                """
+                                # TODO
+                                pass
                     if bo_src is not None:
                         if hasattr(src_var, "name") and hasattr(n, "name"):
                             if src_var.name == "<undetermined>" and n.name == "<undetermined>":

@@ -517,5 +517,126 @@ class TestTransformers(unittest.TestCase):
 
         self.assertIn(0xc98, addresses), 'Could not find the Uninitialized Variable'
 
+    def test_uninitialized_variable_11(self):
+        """
+        Testcase to find an uninitialized variable.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/juliet/"
+                                                         "CWE457_Use_of_Uninitialized_Variable/s01/"
+                                                         "CWE457_Use_of_Uninitialized_Variable__char_pointer_11.out")
+        plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
+        self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0xc98, addresses), 'Could not find the Uninitialized Variable'
+
+    def test_uninitialized_variable_12(self):
+        """
+        Testcase to find an uninitialized variable.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/juliet/"
+                                                         "CWE457_Use_of_Uninitialized_Variable/s01/"
+                                                         "CWE457_Use_of_Uninitialized_Variable__char_pointer_12.out")
+        plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
+        self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0xc98, addresses), 'Could not find the Uninitialized Variable'
+
+    def test_uninitialized_variable_13(self):
+        """
+        Testcase to find an uninitialized variable.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/juliet/"
+                                                         "CWE457_Use_of_Uninitialized_Variable/s01/"
+                                                         "CWE457_Use_of_Uninitialized_Variable__char_pointer_13.out")
+        plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
+        self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0xc98, addresses), 'Could not find the Uninitialized Variable'
+
+    def test_uninitialized_variable_15(self):
+        """
+        Testcase to find an uninitialized variable.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/juliet/"
+                                                         "CWE457_Use_of_Uninitialized_Variable/s01/"
+                                                         "CWE457_Use_of_Uninitialized_Variable__char_pointer_15.out")
+        plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
+        self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0xc98, addresses), 'Could not find the Uninitialized Variable'
+
+    def test_uninitialized_variable_17(self):
+        """
+        Testcase to find an uninitialized variable.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/juliet/"
+                                                         "CWE457_Use_of_Uninitialized_Variable/s01/"
+                                                         "CWE457_Use_of_Uninitialized_Variable__char_pointer_17.out")
+        plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
+        self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0xc98, addresses), 'Could not find the Uninitialized Variable'
+
+        def test_signdness_problem_malloc(self):
+            """
+            Testcase to find an uninitialized variable.
+            :return:
+            """
+            bv = binaryninja.BinaryViewType.get_view_of_file("./tests/juliet/"
+                                                             "Signed_to_Unsigned_Conversion_error/s01/"
+                                                             "CWE195_Signed_to_Unsigned_Conversion_Error"
+                                                             "__connect_socket_malloc_01.out")
+            plugin = self._plugins.get_plugin_instance('PluginSignedAnalysis')
+            self.assertIsNotNone(plugin), 'Could not load Plugin PluginSignedAnalysis'
+            plugin.run(bv, deep=True)
+            self.assertIsNone(plugin.error), 'An error occurred'
+            addresses = []
+            highprob = 0
+            for vuln in plugin.vulns:
+                addresses.append(vuln.instr.address)
+                highprob = vuln.probability if vuln.probability > highprob else highprob
+
+            self.assertIn(0x100f, addresses), 'Could not find the malloc Problem'
+
 if __name__ == '__main__':
     unittest.main()

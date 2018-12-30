@@ -27,7 +27,7 @@ class PluginOutOfBounds(Plugin):
 
     def run(self, bv=None, deep=None, traces=None):
         super(PluginOutOfBounds, self).__init__(bv)
-        self.find_possible_arrays()
+        #self.find_possible_arrays()
         return
 
     def find_possible_arrays(self):
