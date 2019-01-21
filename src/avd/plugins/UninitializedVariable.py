@@ -94,9 +94,7 @@ class PluginUninitializedVariable(Plugin):
 
     def _find_uninitialized_variables(self):
         for funcs in self.bv.functions:
-            #if funcs.start == 0xc90:
-            #    test = self._create_function_control_flow(funcs)
-            #    print("test")
+            control_flow = self._create_function_control_flow(funcs)
             mlil_func = funcs.medium_level_il
             for var in funcs.stack_layout:
                 instr_index_array = mlil_func.get_var_uses(var)
@@ -105,7 +103,7 @@ class PluginUninitializedVariable(Plugin):
                         mlil_instr = mlil_func[mlil_instr_index]
                         for v in mlil_instr.vars_read:
                             if v.source_type == VariableSourceType.StackVariableSourceType:
-                                for bb_path in self._create_function_control_flow(funcs):
+                                for bb_path in control_flow:
                                     if self.check_occurance(mlil_func, bb_path, v):
                                         instr = mlil_instr
                                         if self._is_in_vulns(instr):

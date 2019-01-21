@@ -93,6 +93,8 @@ def handle_backward_functions(bv, var_index, function):
 
 
 def get_sources_of_variable(bv, var):
+    if isinstance(var, SSAVariable):
+        var = var.var
     sources = []
     for bb in var.function.medium_level_il.ssa_form:
         for instr in bb:
@@ -202,7 +204,7 @@ def do_backward_slice(bv, instruction, var_pass, func):
         for new_var in instruction_to_visit.ssa_form.vars_read:
             try:
                 # TODO Might fail on other slices. Debug it ... this will return only one passed Variable
-                if isinstance(new_var, Variable):
+                if isinstance(new_var, SSAVariable):
                     searched_var = new_var
                     visited_instructions.append(instruction_to_visit.instr_index)
                     continue

@@ -55,7 +55,7 @@ class PluginLoader(object):
         for m in self._get_submodules_from_namespace_package(package):
             module = importlib.import_module(m, package=None)
             for c in inspect.getmembers(module, inspect.isclass):
-                # Only classes that start with DeenPlugin will be loaded.
+                # Only classes that start with Plugin will be loaded.
                 if c[0].startswith('Plugin') and \
                         len(c[0].replace('Plugin', '')) != 0:
                     # Call the prerequisites() function before loading plugin.

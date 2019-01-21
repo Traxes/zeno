@@ -617,26 +617,26 @@ class TestTransformers(unittest.TestCase):
 
         self.assertIn(0xc98, addresses), 'Could not find the Uninitialized Variable'
 
-        def test_signdness_problem_malloc(self):
-            """
-            Testcase to find an uninitialized variable.
-            :return:
-            """
-            bv = binaryninja.BinaryViewType.get_view_of_file("./tests/juliet/"
-                                                             "Signed_to_Unsigned_Conversion_error/s01/"
-                                                             "CWE195_Signed_to_Unsigned_Conversion_Error"
-                                                             "__connect_socket_malloc_01.out")
-            plugin = self._plugins.get_plugin_instance('PluginSignedAnalysis')
-            self.assertIsNotNone(plugin), 'Could not load Plugin PluginSignedAnalysis'
-            plugin.run(bv, deep=True)
-            self.assertIsNone(plugin.error), 'An error occurred'
-            addresses = []
-            highprob = 0
-            for vuln in plugin.vulns:
-                addresses.append(vuln.instr.address)
-                highprob = vuln.probability if vuln.probability > highprob else highprob
+    def test_signed_problem_malloc(self):
+        """
+        Testcase to find an uninitialized variable.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file("./tests/juliet/"
+                                                         "Signed_to_Unsigned_Conversion_error/s01/"
+                                                         "CWE195_Signed_to_Unsigned_Conversion_Error"
+                                                         "__connect_socket_malloc_01.out")
+        plugin = self._plugins.get_plugin_instance('PluginSignedAnalysis')
+        self.assertIsNotNone(plugin), 'Could not load Plugin PluginSignedAnalysis'
+        plugin.run(bv, deep=True)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 0
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
 
-            self.assertIn(0x100f, addresses), 'Could not find the malloc Problem'
+        self.assertIn(0x100f, addresses), 'Could not find the malloc Problem'
 
 if __name__ == '__main__':
     unittest.main()

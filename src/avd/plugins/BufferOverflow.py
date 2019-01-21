@@ -97,7 +97,7 @@ class PluginBufferOverflow(Plugin):
             "strcat": BoParams(dst=0, src=1),  # TODO: strcat Needs to special checked if buffer was filled before!
             "_strncat": BoParams(dst=0, src=1, n=2),
             "strncat": BoParams(dst=0, src=1, n=2),
-            "_sprintf": BoParams(dst=0, src=2),
+            "_sprintf": BoParams(dst=0, format_ident=1, src=2),
             "sprintf": BoParams(dst=0, format_ident=1, src=2),  # TODO: Multiple Args & Calc Length of FormatString
             "_snprintf": BoParams(dst=0, src=3, n=1),
             "snprintf": BoParams(dst=0, src=3, n=1),

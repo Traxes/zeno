@@ -55,7 +55,6 @@ def main():
     plugins = PluginLoader(argparser=parser)
     args = parser.parse_args()
 
-    content = plugins.read_content_from_args()
     print(plugins.pprint_available_plugins())
 
 

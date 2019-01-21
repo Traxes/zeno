@@ -1,4 +1,5 @@
 import copy
+import sys
 # TODO Strip down to only important parts
 
 def set_intersection (sets) :
@@ -555,30 +556,28 @@ class Graph:
             return None
         return self.vertices[index]
 
-
-    def get_vertices_data (self) :
+    def get_vertices_data(self):
         return map(lambda x: x.data, [self.vertices[y] for y in self.vertices])
 
-
-    def _find_all_paths(self, node, nodes, node_count, result, rec=0):
+    def _find_all_paths(self, node, nodes, node_count, result, cur=list()):
         if node not in nodes:
             nodes.append(node)
+            cur = [node]
 
         if len(nodes) == node_count or len(self.get_vertex_from_index(node).get_successor_indices()) == 0:
             if nodes not in result:
                 result.append(nodes)
             return
 
-        if rec > (node_count * node_count) or nodes in result:
-            return
-
-
+        if node not in cur:
+            cur.append(node)
 
         for i in self.get_vertex_from_index(node).get_successor_indices():
-            self._find_all_paths(i, nodes[:], node_count, result, rec + 1)
-
+            if i not in cur:
+                self._find_all_paths(i, nodes[:], node_count, result, cur[:])
 
     def compute_all_paths(self):
+        sys.setrecursionlimit(10000)
         paths = list()
         self._find_all_paths(self.vertices.keys()[0], list(), len(self.vertices), paths)
 
