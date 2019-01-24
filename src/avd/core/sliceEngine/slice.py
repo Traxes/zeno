@@ -93,6 +93,8 @@ def handle_backward_functions(bv, var_index, function):
 
 
 def get_sources_of_variable(bv, var):
+    if not var:
+        return []
     if isinstance(var, SSAVariable):
         var = var.var
     sources = []
@@ -105,7 +107,11 @@ def get_sources_of_variable(bv, var):
                         for index in visited:
                             call = v.function.medium_level_il.ssa_form[index]
                             if call.operation == MediumLevelILOperation.MLIL_CALL_SSA:
-                                sources.append(bv.get_symbol_at(call.dest.constant).name)
+                                if hasattr(call.dest, "constant"):
+                                    sources.append(bv.get_symbol_at(call.dest.constant).name)
+                                else:
+                                    # TODO Relative Call.. skip until implemented
+                                    pass
                                 # Resolv call.dest
     return sources
 
@@ -237,7 +243,7 @@ def do_backward_slice(bv, instruction, var_pass, func):
                             visited_instructions.append(a)
             except AttributeError as e:
                 # Might be final variable... lets check
-                print("ERROR")
+                #print("ERROR")
                 pass
             except Exception as e:
                 print(e)

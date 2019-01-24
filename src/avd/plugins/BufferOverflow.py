@@ -8,6 +8,7 @@ from src.avd.core.sliceEngine import slice
 from src.avd.core.sliceEngine.loopDetection import loop_analysis
 from binaryninja import MediumLevelILOperation, RegisterValueType, SSAVariable
 from sys import maxsize
+from tqdm import tqdm
 
 __all__ = ['PluginBufferOverflow']
 
@@ -46,6 +47,8 @@ def parse_format_string(s, params):
 
 
 def calc_size(var, func):
+    if not var:
+        return None
     if SSAVariable == type(var):
         var = var.var
 
@@ -64,7 +67,10 @@ def print_f_call(arg):
         try:
             fun_c += ar
         except TypeError:
-            fun_c += ar.name
+            if ar:
+                fun_c += ar.name
+            else:
+                fun_c += "None"
         if i < (len(arg)-1):
             fun_c += ', '
     fun_c += ");"
@@ -82,6 +88,7 @@ class PluginBufferOverflow(Plugin):
         self.arch_offsets = {
             'armv7': 4,
             'x86_64': 0,
+            'x86': 0,
         }
         self.bv = bv
         self.bo_symbols = {
@@ -115,7 +122,7 @@ class PluginBufferOverflow(Plugin):
 
     # TODO Add default Blacklist to avoid Parsing e.g. libc
     def deep_function_analysis(self):
-        for func in self.bv.functions:
+        for func in tqdm(self.bv.functions):
             func_mlil = func.medium_level_il
             for bb in func_mlil:
                 for instr in bb:
@@ -184,8 +191,8 @@ class PluginBufferOverflow(Plugin):
     def handle_single_destination(format_vars, ref, src_size, current_function):
         for f_str in format_vars:
             # TODO check if possible to delete
-            v = ref.function.get_stack_var_at_frame_offset(format_vars[f_str].offset,
-                                                           current_function.start)
+            #v = ref.function.get_stack_var_at_frame_offset(format_vars[f_str].offset,
+             #                                              current_function.start)
 
             size = 0
             # TODO Handle arch dependent max Size of int/double etc
@@ -243,7 +250,7 @@ class PluginBufferOverflow(Plugin):
             self.deep_function_analysis()
 
         arch_offset = self.arch_offsets[self.bv.arch.name]
-        for syms in self.bo_symbols:
+        for syms in tqdm(self.bo_symbols):
             symbol = self.bv.get_symbol_by_raw_name(syms)
             if symbol is not None:
                 for ref in self.bv.get_code_refs(symbol.address):
@@ -357,10 +364,17 @@ class PluginBufferOverflow(Plugin):
                                     # n = FakeRegister("<undetermined>", constant=n.is_constant)
                             # TODO Fix Exception to be more precise
                             except Exception as e:
-                                traceback.print_exc()
-                                real_param_name = get_params(ref)[bo_n].src.name
-                                n = FakeRegister(real_param_name)
-                                n_val = real_param_name
+                                # TODO Fix tracebacks
+                                #traceback.print_exc()
+                                try:
+                                    real_param_name = get_params(ref)[bo_n].src.name
+                                    n = FakeRegister(real_param_name)
+                                    n_val = real_param_name
+                                except IndexError:
+                                    # TODO binary ninja had a problem with correctly resolving the function parameters.
+                                    # Need to try it manually
+                                    continue
+
                         else:
                             if n.is_constant:
                                 n_val = str(n.value)
@@ -382,6 +396,8 @@ class PluginBufferOverflow(Plugin):
                         format_vars = parse_format_string(format_string, params)
                         if bo_dst is not None:
                             size = self.handle_single_destination(format_vars, ref, src_size, current_function)
+                            if not size:
+                                size = 0
                             size += len(format_string)
                             if size > dst_size:
                                 text = "{} 0x{:x}\t{}\n".format(ref.function.name, addr, print_f_call(cf))
@@ -401,7 +417,7 @@ class PluginBufferOverflow(Plugin):
                                 # Check if the Format String ends the string properly
                                 last_format = format_vars.keys()[-1]
                                 ending_strings = ["\n", "\r", "\x00"]
-                                if not any(x in format_string[format.rfind(last_format) + len(last_format):] for x in
+                                if not any(x in format_string[format_string.rfind(last_format) + len(last_format):] for x in
                                            ending_strings):
                                     text = "{} 0x{:x}\t{}\n".format(ref.function.name, addr, print_f_call(cf))
                                     text += "\t\tPotential Overflow!\n"

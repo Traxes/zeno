@@ -8,12 +8,6 @@ int vuln(){
     return 1;
 }
 
-
-void notvuln(){
-    return;
-}
-
-
 int main(int argc, char const *argv[])
 {
     char buf[21];
@@ -24,9 +18,6 @@ int main(int argc, char const *argv[])
             vuln();  
             continue;       
         }
- 
-    }
-    
+    }    
     return 0;
 }
-

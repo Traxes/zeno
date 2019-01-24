@@ -1,4 +1,5 @@
 from . import Plugin
+from tqdm import tqdm
 from binaryninja import SSAVariable
 from src.avd.reporter.vulnerability import Vulnerability
 
@@ -37,7 +38,7 @@ class PluginLargeStackFrame(Plugin):
             return abs(var.storage) - abs(func.stack_layout[func.stack_layout.index(var) + 1].storage)
 
     def _find_large_stack_frames(self):
-        for func in self.bv.functions:
+        for func in tqdm(self.bv.functions):
             for var in func.stack_layout:
                 size = self._calc_size(var, func)
                 if size >= self._threshold:

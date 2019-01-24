@@ -75,6 +75,9 @@ def main():
         print("arch: {0} | platform: {1}".format(bv.arch, bv.platform))
         bv.update_analysis_and_wait()
         for name, _ in plugins.available_plugins:
+            # Just testing a single Plugin
+            #if not name == "PluginFindHeartbleed":
+            #    continue
             plugin = plugins.get_plugin_instance(name)
             plugin.vulns = []
             plugin.run(bv, args.deep)

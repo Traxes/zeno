@@ -3,6 +3,7 @@ from src.avd.reporter.vulnerability import Vulnerability
 from src.avd.core.sliceEngine import slice
 from binaryninja import MediumLevelILOperation, VariableSourceType
 from src.avd.core.sliceEngine.loopDetection import graph_function
+from tqdm import tqdm
 
 __all__ = ['PluginUninitializedVariable']
 
@@ -93,7 +94,7 @@ class PluginUninitializedVariable(Plugin):
         return False
 
     def _find_uninitialized_variables(self):
-        for funcs in self.bv.functions:
+        for funcs in tqdm(self.bv.functions):
             control_flow = self._create_function_control_flow(funcs)
             mlil_func = funcs.medium_level_il
             for var in funcs.stack_layout:

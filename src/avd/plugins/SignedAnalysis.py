@@ -3,6 +3,7 @@ from src.avd.reporter.vulnerability import Vulnerability
 from binaryninja import MediumLevelILOperation
 from src.avd.core.sliceEngine import slice
 from src.avd.helper import sources
+from tqdm import tqdm
 
 class PluginSignedAnalysis(Plugin):
     name = "SignedAnalysis"
@@ -23,7 +24,7 @@ class PluginSignedAnalysis(Plugin):
         super(PluginSignedAnalysis, self).__init__(bv)
         #func = binjaWrapper.get_mlil_function(self.bv, 0xf20)
         #self._function_sign_analysis_start(func)
-        for funcs in self.bv.functions:
+        for funcs in tqdm(self.bv.functions):
             self._function_sign_analysis_start(funcs)
         return
 
