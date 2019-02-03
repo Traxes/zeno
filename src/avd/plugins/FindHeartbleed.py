@@ -515,9 +515,6 @@ class PluginFindHeartbleed(Plugin):
         dangerous_calls = []
 
         for function, addr in tqdm(memcpy_refs):
-            #if not function.start == 0x80af130:
-            #    continue
-            #print("TEST")
             call_instr = function.get_low_level_il_at(addr).medium_level_il
             if self.check_memcpy(call_instr.ssa_form):
                 dangerous_calls.append((addr, call_instr.address))
