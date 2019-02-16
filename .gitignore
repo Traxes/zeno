@@ -1,4 +1,7 @@
+*~
+*.swp
 *.bndb
+*.pyc
 *.out
 *.com
 *.class
