@@ -194,7 +194,10 @@ dmypy.json
 *.exe
 *.o
 *.so
-src/tests
+src/tests/bin
+src/tests/juliet
+src/tests/oob
+src/tests/SliceEngine
 
 
 
