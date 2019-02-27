@@ -1,5 +1,5 @@
 import math
-from . import Plugin
+from src.avd.plugins import Plugin
 
 from binaryninja import (BinaryViewType, MediumLevelILInstruction,
                          MediumLevelILOperation, RegisterValueType,
@@ -504,13 +504,14 @@ class PluginFindHeartbleed(Plugin):
         return model.is_byte_swap()
 
     def _find_heartbleed(self):
-
+        if not 'memcpy' in self.bv.symbols:
+            return
         memcpy_refs = [
             (ref.function, ref.address)
             for ref in self.bv.get_code_refs(self.bv.symbols['memcpy'][0].address)
         ]
 
-        print 'Checking {} memcpy calls'.format(len(memcpy_refs))
+        print('Checking {} memcpy calls'.format(len(memcpy_refs)))
 
         dangerous_calls = []
 

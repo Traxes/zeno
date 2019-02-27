@@ -7,14 +7,14 @@ import inspect
 import pprint
 import pkgutil
 import importlib
-import avd.plugins
+
 
 class PluginLoader(object):
     """
     Used for Loading Plugins
     """
 
-    def __init__(self, argparser=None):
+    def __init__(self, argparser=None, base=None):
         """
         Constructor to load plugins from the according directory.
         :param argparser:
@@ -22,6 +22,7 @@ class PluginLoader(object):
         self._argparser = None
         self._subargparser = None
         self.plugins = []
+        self.base = base
         if argparser:
             self.argparser = argparser
         self.load_plugins()
@@ -91,7 +92,13 @@ class PluginLoader(object):
         Load the available Plugins
         :return:
         """
-        self.plugins = self._get_plugin_classes_from_module(avd.plugins)
+        generic = importlib.import_module('src.avd.plugins.generic')
+        optional = importlib.import_module('src.avd.plugins.optional')
+        special = importlib.import_module('src.avd.plugins.special')
+        self.plugins = self._get_plugin_classes_from_module(generic)
+        self.plugins += self._get_plugin_classes_from_module(optional)
+        self.plugins += (self._get_plugin_classes_from_module(special))
+
 
     def plugin_available(self, name):
         """Returns True if the given plugin name is available,

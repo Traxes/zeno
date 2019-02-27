@@ -1,4 +1,4 @@
-from . import Plugin
+from src.avd.plugins import Plugin
 from src.avd.reporter.vulnerability import Vulnerability
 from src.avd.core.sliceEngine import slice
 from binaryninja import MediumLevelILOperation, VariableSourceType

@@ -1,4 +1,4 @@
-from graph import *
+from .graph import *
 
 
 class InsAnalysis:
@@ -35,7 +35,7 @@ class InsAnalysis:
 
         written, read = il_registers(self.il)
 
-        print written, read, self.il, self.il.operation
+        print(written, read, self.il, self.il.operation)
 
         # We don't want to modify the in_variables we were given. We can now
         # changes this up at will.
@@ -87,14 +87,14 @@ class BBAnalysis:
 
     def print_il_instructions(self):
         for ins in self.basic_block:
-            print ins.operation, ins
+            print(ins.operation, ins)
 
     def read_written_registers(self):
         written_ = []
         read_ = []
         for il in self.basic_block:
             written, read = il_registers(il)
-            print written, read
+            print(written, read)
             for r in read:
                 if r not in written_:
                     read_.append(r)

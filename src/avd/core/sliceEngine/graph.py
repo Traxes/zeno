@@ -199,13 +199,13 @@ class Graph:
         '''
 
         # Ensure we have a valid head and tail
-        if not self.vertices.has_key(head_index) :
+        if not head_index in self.vertices:
             return None
-        if not self.vertices.has_key(tail_index) :
+        if not tail_index in self.vertices:
             return None
 
         # If we already have an edge here, don't add a new one
-        if     self.edges_by_head_index.has_key(head_index) \
+        if head_index in self.edges_by_head_index \
            and edge_list_get_tail_index(self.edges_by_head_index[head_index], tail_index) :
             return None
 
@@ -217,12 +217,12 @@ class Graph:
         self.edges[index] = edge
 
         # Add this edge to our lists of edges by head_index and tail_index
-        if not self.edges_by_head_index.has_key(head_index) :
+        if not head_index in self.edges_by_head_index:
             self.edges_by_head_index[head_index] = [edge]
         else :
             self.edges_by_head_index[head_index].append(edge)
 
-        if not self.edges_by_tail_index.has_key(tail_index) :
+        if not tail_index in self.edges_by_tail_index:
             self.edges_by_tail_index[tail_index] = [edge]
         else :
             self.edges_by_tail_index[tail_index].append(edge)
@@ -250,7 +250,7 @@ class Graph:
                 index = self.next_vertex_index
                 self.next_vertex_index += 1
         else :
-            if self.vertices.has_key(index) :
+            if index in self.vertices :
                 return None
         self.vertices[index] = Vertex(self, index, data)
         return self.vertices[index]
@@ -525,7 +525,7 @@ class Graph:
                 list will be returned if no such edges exist, including the case
                 where a vertex with index head_index does not exist.
         '''
-        if not self.edges_by_head_index.has_key(head_index) :
+        if not head_index in self.edges_by_head_index:
             return []
         return self.edges_by_head_index[head_index]
 
@@ -552,7 +552,7 @@ class Graph:
         @param index The index of the vertex to retrieve.
         @return The vertex, or None if the vertex does not exist.
         '''
-        if not self.vertices.has_key(index) :
+        if not index in self.vertices:
             return None
         return self.vertices[index]
 
@@ -564,7 +564,7 @@ class Graph:
             nodes.append(node)
             cur = [node]
 
-        if len(nodes) == node_count or len(self.get_vertex_from_index(node).get_successor_indices()) == 0:
+        if len(nodes) == node_count or len(list(self.get_vertex_from_index(node).get_successor_indices())) == 0:
             if nodes not in result:
                 result.append(nodes)
             return
@@ -579,7 +579,7 @@ class Graph:
     def compute_all_paths(self):
         sys.setrecursionlimit(10000)
         paths = list()
-        self._find_all_paths(self.vertices.keys()[0], list(), len(self.vertices), paths)
+        self._find_all_paths(list(self.vertices)[0], list(), len(self.vertices), paths)
 
         path_basic_blocks = []
         for path in paths:
