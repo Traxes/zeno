@@ -474,11 +474,11 @@ if __name__ == "__main__":
 
     # base usage
     if argc < 2:
-        print "usage: %s <coverage filename>" % os.path.basename(sys.argv[0])
+        print("usage: {} <coverage filename>".format(os.path.basename(sys.argv[0])))
         sys.exit()
 
     # attempt file parse
     x = DrcovData(argv[1])
     for bb, _ in x.get_blocks_by_module("bo"):
     #for bb in x.basic_blocks:
-        print "0x%08x" % bb
+        print("0x%08x" % bb)

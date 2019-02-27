@@ -1,4 +1,4 @@
-from . import Plugin
+from src.avd.plugins import Plugin
 #from ..reporter.vulnerability import Vulnerability
 #from ..helper import binjaWrapper, sources
 #import re

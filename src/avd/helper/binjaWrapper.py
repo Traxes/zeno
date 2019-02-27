@@ -2,6 +2,7 @@
 These helper functions are usually one liner. Those conversions are usually not (yet) very well documented
 and thus, I do not forget them again :).
 """
+import codecs
 
 
 def get_low_il_instruction(bv, addr):
@@ -43,8 +44,8 @@ def get_constant_string(bv, addr):
     :return string:
     """
     str_len = 0
-    curr = bv.read(addr, 1).encode('hex')
+    curr = codecs.encode(bv.read(addr, 1), "hex").decode()
     while (curr != "2e") and (curr != "00"):
         str_len += 1
-        curr = bv.read(addr + str_len, 1).encode('hex')
-    return bv.read(addr, str_len)
+        curr = codecs.encode(bv.read(addr + str_len, 1), "hex").decode()
+    return bv.read(addr, str_len).decode()

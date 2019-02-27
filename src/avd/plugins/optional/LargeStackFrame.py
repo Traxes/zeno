@@ -1,4 +1,4 @@
-from . import Plugin
+from src.avd.plugins import Plugin
 from tqdm import tqdm
 from binaryninja import SSAVariable
 from src.avd.reporter.vulnerability import Vulnerability

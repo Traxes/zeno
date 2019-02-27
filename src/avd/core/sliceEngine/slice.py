@@ -4,14 +4,20 @@ from src.avd.helper import binjaWrapper
 
 
 # TODO Make forward slice to visit through non blacklisted functions
-def do_forward_slice(instruction, function):
+def do_forward_slice(instruction, func):
+    """
+    TODO
+    :param instruction:
+    :param func:
+    :return:
+    """
     # if no variables written, return the empty set.
     if not instruction.ssa_form.vars_written:
         return set()
 
     instruction_queue = {
         use for var in instruction.ssa_form.vars_written if var.var.name
-        for use in function.ssa_form.get_ssa_var_uses(var)
+        for use in func.ssa_form.get_ssa_var_uses(var)
     }
 
     visited_instructions = {instruction.ssa_form.instr_index}
@@ -22,7 +28,7 @@ def do_forward_slice(instruction, function):
         if visit_index is None or visit_index in visited_instructions:
             continue
 
-        instruction_to_visit = function[visit_index]
+        instruction_to_visit = func[visit_index]
 
         if instruction_to_visit is None:
             continue
@@ -31,7 +37,7 @@ def do_forward_slice(instruction, function):
             (
                 use for var in instruction_to_visit.ssa_form.vars_written
                 if var.var.name
-                for use in function.ssa_form.get_ssa_var_uses(var)
+                for use in func.ssa_form.get_ssa_var_uses(var)
             )
         )
 
@@ -40,9 +46,14 @@ def do_forward_slice(instruction, function):
     return visited_instructions
 
 
-
 # TODO Rework a new function to filter for single variables hitting functions
 def do_forward_slice_with_variable(instruction, function):
+    """
+    TODO
+    :param instruction:
+    :param function:
+    :return:
+    """
     # if no variables written, return the empty set.
     if not instruction.ssa_form.vars_written:
         return set()
@@ -79,20 +90,22 @@ def do_forward_slice_with_variable(instruction, function):
     return visited_instructions
 
 
-def handle_backward_functions(bv, var_index, function):
-    for refs in bv.get_code_refs(function.source_function.start):
-        instruction = binjaWrapper.get_medium_il_instruction(bv, refs.address)
-        # instruction = refs.function.get_low_level_il_at(refs.address).mapped_medium_level_il
-        # TODO Delete?
-        call_instr_index = instruction.instr_index
-        new_var = instruction.ssa_form.vars_read[var_index]
-        new_instr_index = instruction.function.ssa_form.get_ssa_var_definition(new_var)
-        new_instr = instruction.function.ssa_form[new_instr_index]
-        return do_backward_slice(bv, new_instr, new_var, new_instr.function)
-    return set()
+def handle_backward_slice_function(func, index):
+    """
+    TODO
+    :param func:
+    :param index:
+    :return:
+    """
+    for ref in func.source_function.view.get_code_refs(func.source_function.start):
+        previous_function = func.source_function.view.get_function_at(ref.function.start).medium_level_il
+        calling_instr = previous_function[previous_function.get_instruction_start(ref.address)]
+        new_slice_variable = calling_instr.ssa_form.vars_read[index]
+        return do_backward_slice_with_variable(calling_instr, previous_function.ssa_form, new_slice_variable)
 
 
 def get_sources_of_variable(bv, var):
+    # TODO Recreate this function.. it´s ugly
     if not var:
         return []
     if isinstance(var, SSAVariable):
@@ -117,6 +130,12 @@ def get_sources_of_variable(bv, var):
 
 
 def get_ssa_manual_var_uses(func, var):
+    """
+    TODO
+    :param func:
+    :param var:
+    :return:
+    """
     variables = []
     for bb in func:
         for instr in bb:
@@ -127,6 +146,12 @@ def get_ssa_manual_var_uses(func, var):
 
 
 def get_manual_var_uses(func, var):
+    """
+    TODO
+    :param func:
+    :param var:
+    :return:
+    """
     variables = []
     for bb in func:
         for instr in bb:
@@ -137,6 +162,12 @@ def get_manual_var_uses(func, var):
 
 
 def get_manual_var_uses_custom_bb(bb_paths, var):
+    """
+    TODO
+    :param bb_paths:
+    :param var:
+    :return:
+    """
     variables = []
     for bb in bb_paths:
         for instr in bb:
@@ -147,108 +178,93 @@ def get_manual_var_uses_custom_bb(bb_paths, var):
 
 
 def get_sources(bv, ref, instr, n):
-    slice_src, visited_src = do_backward_slice(
-        bv,
+    """
+    TODO
+    :param bv:
+    :param ref:
+    :param instr:
+    :param n:
+    :return:
+    """
+    slice_src, visited_src = do_backward_slice_with_variable(
         instr,
-        binjaWrapper.get_ssa_var_from_mlil_instruction(instr, n),
-        binjaWrapper.get_mlil_function(bv, ref.address)
+        binjaWrapper.get_mlil_function(bv, ref.address),
+        binjaWrapper.get_ssa_var_from_mlil_instruction(instr, n)
     )
+
     return get_sources_of_variable(bv, slice_src)
+
 
 def get_sources_with_mlil_function(bv, func, instr, n):
-    slice_src, visited_src = do_backward_slice(
-        bv,
+    """
+    TODO
+    :param bv:
+    :param func:
+    :param instr:
+    :param n:
+    :return:
+    """
+    slice_src, visited_src = do_backward_slice_with_variable(
         instr,
-        binjaWrapper.get_ssa_var_from_mlil_instruction(instr, n),
-        func.medium_level_il
+        func.medium_level_il,
+        binjaWrapper.get_ssa_var_from_mlil_instruction(instr, n)
     )
+
     return get_sources_of_variable(bv, slice_src)
 
+
 def get_var_from_register(bv, instr, n):
+    """
+    TODO
+    :param bv:
+    :param instr:
+    :param n:
+    :return:
+    """
     mlil_function = binjaWrapper.get_mlil_function(bv, instr.address)
     ssa_var = instr.ssa_form.vars_read[n]
     mlil_function[mlil_function.get_ssa_var_definition(ssa_var)]
 
 
-def do_backward_slice(bv, instruction, var_pass, func):
+def do_backward_slice_with_variable(instruction, func, variable):
     """
-    :param bv:
+    TODO
     :param instruction:
-    :param var_pass:
-    :param func:
+    :param func: in MLIL SSA Form:
+    :param variable: the Variable to trace:
     :return:
     """
-    # TODO var_pass kinda unnused wtf?
-    if var_pass is None:
-        print(instruction.ssa_form.operands[1])
-        if not isinstance(instruction.ssa_form.operands[1], SSAVariable):
-            print("Failed ! No SSA Var")
-            return set()
-        var_pass = instruction.ssa_form.operands[1]
-        instruction_queue = set([instruction.ssa_form.instr_index])
-    else:
-        # Search for exactly one Operant
-        instruction_queue = set([func.get_ssa_var_definition(var_pass)])
 
-    variables = set()
-    ## TODO Current Version contains a vars_read Bug on Stack Offsets. Hence the following is commented out.. on Bugfix use this again since it does make more sense overall!
+    instruction_queue = {}
 
-    visited_instructions = []
-    searched_var = None
-    args = []
-    for i in range(0, len(func.non_ssa_form.source_function.parameter_vars)):
-        args.append(SSAVariable(func.non_ssa_form.source_function.parameter_vars[i], 0))
+    if variable.var.name:
+        instruction_queue.update({func.ssa_form.get_ssa_var_definition(variable): variable})
+
+    visited_instructions = [(instruction.ssa_form.instr_index, None)]
 
     while instruction_queue:
-        visit_index = instruction_queue.pop()
+
+        visit_index = instruction_queue.popitem()
+
         if visit_index is None or visit_index in visited_instructions:
             continue
-        instruction_to_visit = func[visit_index]
+
+        instruction_to_visit = func[visit_index[0]]
+
         if instruction_to_visit is None:
             continue
 
-        for new_var in instruction_to_visit.ssa_form.vars_read:
-            try:
-                # TODO Might fail on other slices. Debug it ... this will return only one passed Variable
-                if isinstance(new_var, SSAVariable):
-                    searched_var = new_var
-                    visited_instructions.append(instruction_to_visit.instr_index)
-                    continue
-                #else:
-                    # Extracting the real var out of the SSA form and check it against the function parameters.
-                    # If this is true we return the function parameter.
-                    # TODO do function backtracing to get the input
-                    #if new_var.var in func.source_function.parameter_vars:
-                    #    searched_var = new_var
+        for var in instruction_to_visit.ssa_form.vars_read:
+            if type(var) is not SSAVariable:
+                # TODO Sometimes BN cannot assign it to SSA_FORM...
+                continue
+            if var.var.name:
+                if func.ssa_form.get_ssa_var_definition(var) is not None:
+                    instruction_queue.update({func.ssa_form.get_ssa_var_definition(var): var})
+                else:
+                    var, slice_visited_instructions = handle_backward_slice_function(func, var.var.index)
+                    visited_instructions += slice_visited_instructions
 
-                instruction_queue.add(
-                    func.get_ssa_var_definition(
-                        new_var
-                    )
-                )
-                variables.update(
-                    [(var.var.identifier, var.version)
-                     for var in instruction_to_visit.ssa_form.vars_read]
-                )
-                if instruction_to_visit not in visited_instructions:
-                    visited_instructions.append(instruction_to_visit.instr_index)
-                # print(visited_instructions)
-                if new_var in args:
-                    # print("Found Function End")
-                    for a in handle_backward_functions(bv, args.index(new_var), func):
-                        if isinstance(a, Variable):
-                            searched_var = a
-                            continue
-                        if a not in visited_instructions:
-                            visited_instructions.append(a)
-            except AttributeError as e:
-                # Might be final variable... lets check
-                #print("ERROR")
-                pass
-            except Exception as e:
-                print(e)
+        visited_instructions.append(visit_index)
 
-                # print(function_Variables)
-    # for ea in visited_instructions:
-    #     print(function[ea])
-    return searched_var, visited_instructions
+    return var, visited_instructions

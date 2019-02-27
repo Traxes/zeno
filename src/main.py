@@ -18,7 +18,10 @@ def is_valid_file(parser, arg):
     if not os.path.exists(arg):
         parser.error("The file %s does not exist!" % arg)
     else:
-        return arg  # return an open file handle
+        if not os.path.isfile(arg):
+            parser.error("The file %s does not exist!" % arg)
+        else:
+            return arg  # return an open file handle
 
 def path_leaf(path):
     head, tail = ntpath.split(path)
@@ -76,7 +79,7 @@ def main():
         bv.update_analysis_and_wait()
         for name, _ in plugins.available_plugins:
             # Just testing a single Plugin
-            #if not name == "PluginFindHeartbleed":
+            #if not name == "PluginIntegerOverflow":
             #    continue
             plugin = plugins.get_plugin_instance(name)
             plugin.vulns = []

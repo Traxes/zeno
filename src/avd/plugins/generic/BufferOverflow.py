@@ -134,19 +134,21 @@ class PluginBufferOverflow(Plugin):
                             if loop_analysis(bb):
                                 # Slice to Source
                                 # TODO Currently only works for MLIL_STORE (e.g. <il: [rdi_1].q = [rsi].q>)
-                                src, src_visited_instr = slice.do_backward_slice(self.bv, instr,
-                                                                                 instr.ssa_form.vars_read[1],
-                                                                                 func_mlil.ssa_form)
-                                dst, dst_visited_instr = slice.do_backward_slice(self.bv, instr,
-                                                                                 instr.ssa_form.vars_read[0],
-                                                                                 func_mlil.ssa_form)
+                                src, src_visited_instr = slice.do_backward_slice_with_variable(instr,
+                                                                                               func_mlil.ssa_form,
+                                                                                               instr.ssa_form.vars_read[1]
+                                                                                               )
+                                dst, dst_visited_instr = slice.do_backward_slice(instr,
+                                                                                 func_mlil.ssa_form,
+                                                                                 instr.ssa_form.vars_read[0]
+                                                                                 )
                                 # TODO This is just a hotfix when src or dst is None.
                                 # TODO problem by CWE121_Stack_Based_Buffer_Overflow__char_type_overrun_memcpy_01
                                 if not src or not dst:
                                     continue
 
-                                src_size = calc_size(src, func)
-                                dst_size = calc_size(dst, func)
+                                src_size = calc_size(src, src.function)
+                                dst_size = calc_size(dst, dst.function)
                                 if src_size > dst_size:
                                     # Might be an overflow. Lets Check if Source comes from a nasty function.
                                     # pretty print array
@@ -245,6 +247,8 @@ class PluginBufferOverflow(Plugin):
                     self.vulns.append(v)
 
     def run(self, bv=None, deep=True):
+        if bv is None:
+            raise Exception("No state was provided by Binary Ninja. Something must be wrong")
         super(PluginBufferOverflow, self).__init__(bv)
         if deep:
             self.deep_function_analysis()
