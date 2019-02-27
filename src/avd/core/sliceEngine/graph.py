@@ -87,7 +87,7 @@ def edge_list_get_tail_index (edge_list, tail_index) :
     return None
 
 
-class Edge :
+class Edge:
     '''
     This class represents a generic edge in a graph. It does not contain
     references to its head and tail directly, but instead indicies to the head
@@ -95,7 +95,7 @@ class Edge :
 
     You should not store references to this edge directly.
     '''
-    def __init__ (self, graph, index, head_index, tail_index, data=None) :
+    def __init__(self, graph, index, head_index, tail_index, data=None):
         '''
         Create an edge. You should not call this directly. Call
         graph.add_edge() instead.
@@ -112,19 +112,18 @@ class Edge :
         '''
         return self.graph.vertex_from_index(self.head_index)
 
-    def tail (self) :
+    def tail(self):
         '''
         Returns a reference to the tail vertex of this edge.
         '''
         return self.graph.vertex_from_index(self.tail_index)
 
 
-
-class Vertex :
+class Vertex:
     '''
     This class represents a generic vertex in a graph.
     '''
-    def __init__ (self, graph, index, data=None) :
+    def __init__(self, graph, index, data=None):
         '''
         Creates a vertex. You should not call this directly. Call
         graph.add_vertex() instead.
@@ -133,26 +132,26 @@ class Vertex :
         self.index = index
         self.data = data
 
-    def get_predecessor_indices (self) :
+    def get_predecessor_indices(self):
         predecessor_edges = self.graph.get_edges_by_tail_index(self.index)
         return map(lambda e: e.head_index, predecessor_edges)
 
-    def get_predecessors (self) :
+    def get_predecessors(self):
         return map(lambda i: self.graph.get_vertex_from_index(i),
                    self.get_predecessor_indices())
 
-    def get_successor_indices (self) :
+    def get_successor_indices(self):
         successor_edges = self.graph.get_edges_by_head_index(self.index)
         return map(lambda e: e.tail_index, successor_edges)
 
-    def get_successors (self) :
+    def get_successors(self):
         return map(lambda i: self.graph.get_vertex_from_index(i),
                    self.get_successor_indices())
 
 
 class Graph:
 
-    def __init__ (self, entry_index=None) :
+    def __init__(self, entry_index=None):
         # When we create vertices, if an index is not specified, we increment
         # this to ensure we are creating unique vertex indicies
         self.next_vertex_index = -1000
@@ -175,7 +174,7 @@ class Graph:
         self.entry_index = entry_index
 
 
-    def add_edge (self, head, tail, data=None) :
+    def add_edge(self, head, tail, data=None):
         '''
         Adds an edge to the graph by giving references to the head and tail
         vertices.
@@ -184,7 +183,7 @@ class Graph:
         return self.add_edge_by_indices(head.index, tail.index, data)
 
 
-    def add_edge_by_indices (self, head_index, tail_index, data=None) :
+    def add_edge_by_indices(self, head_index, tail_index, data=None):
         '''
         Adds an edge to the graph. Will fail if:
         1) There is no vertex in the graph for head_index.
@@ -231,7 +230,7 @@ class Graph:
         return edge
 
 
-    def add_vertex (self, index=None, data=None) :
+    def add_vertex(self, index=None, data=None):
         '''
         Adds a vertex to the graph. Index represents a desired index for this
         vertex, such as an address in a CFG, and data represents data you would
@@ -243,14 +242,14 @@ class Graph:
         @return The newly created vertex, or None if the vertex could not be
                 created.
         '''
-        if index == None :
+        if index == None:
             index = self.next_vertex_index
             self.next_vertex_index += 1
-            while self.vertices.has_key(index) :
+            while self.vertices.has_key(index):
                 index = self.next_vertex_index
                 self.next_vertex_index += 1
-        else :
-            if index in self.vertices :
+        else:
+            if index in self.vertices:
                 return None
         self.vertices[index] = Vertex(self, index, data)
         return self.vertices[index]
@@ -262,7 +261,7 @@ class Graph:
         vertex.
         '''
         # We must have an entry_index to process dominators
-        if self.entry_index == None :
+        if self.entry_index == None:
             return None
 
         # Make a copy of this graph
@@ -273,24 +272,24 @@ class Graph:
         dominators[dag.entry_index] = [dag.entry_index]
 
         # queue of nodes to process
-        queue = dag.get_vertex_from_index(dag.entry_index).get_successor_indices()
+        queue = list(dag.get_vertex_from_index(dag.entry_index).get_successor_indices())
 
-        while len(queue) > 0 :
+        while len(queue) > 0:
             vertex_index = queue[0]
             queue = queue[1:]
             vertex = dag.get_vertex_from_index(vertex_index)
 
             # are all predecessors for this vertex_index set?
             predecessors_set = True
-            for predecessor_index in predecessors[vertex_index] :
-                if predecessor_index not in dominators :
-                    if predecessor_index not in queue :
+            for predecessor_index in predecessors[vertex_index]:
+                if predecessor_index not in dominators:
+                    if predecessor_index not in queue:
                         queue.append(predecessor_index)
                     predecessors_set = False
 
             # if all predecessors are not set, they now come before this block
             # in the queue and will be set
-            if not predecessors_set :
+            if not predecessors_set:
                 queue.append(vertex_index)
                 continue
 
@@ -362,31 +361,31 @@ class Graph:
 
         # Set our initial predecessors for each vertex
         predecessors = {}
-        for vertex_index in self.vertices :
+        for vertex_index in self.vertices:
             vertex = self.vertices[vertex_index]
-            predecessors[vertex_index] = vertex.get_predecessor_indices()
+            predecessors[vertex_index] = list(vertex.get_predecessor_indices())
 
         # We now do successive propogation passes until we no longer propogate
-        queue = self.vertices.keys()
-        while len(queue) > 0 :
+        queue = list(self.vertices.keys())
+        while len(queue) > 0:
             vertex_index = queue[0]
             queue = queue[1:]
 
             # for each predecessor of this vertex
-            for predecessor_index in predecessors[vertex_index] :
+            for predecessor_index in predecessors[vertex_index]:
                 # Ensure all of these predecessor's are predecessors of this
                 # vertex
                 changed = False
-                for pp_index in predecessors[predecessor_index] :
-                    if pp_index not in predecessors[vertex_index] :
+                for pp_index in predecessors[predecessor_index]:
+                    if pp_index not in predecessors[vertex_index]:
                         predecessors[vertex_index].append(pp_index)
                         changed = True
                 # if we changed, add all successors to the queue
-                if changed :
+                if changed:
                     vertex = self.get_vertex_from_index(vertex_index)
                     successor_indices = vertex.get_successor_indices()
-                    for s_index in successor_indices :
-                        if s_index not in queue :
+                    for s_index in successor_indices:
+                        if s_index not in queue:
                             queue.append(s_index)
 
         return predecessors
@@ -530,7 +529,7 @@ class Graph:
         return self.edges_by_head_index[head_index]
 
 
-    def get_edges_by_tail_index (self, tail_index) :
+    def get_edges_by_tail_index(self, tail_index):
         '''
         Returns all edges who have a given tail index. This is the same as the
         predecessor edges for a vertex by index.
@@ -540,7 +539,7 @@ class Graph:
                 list will be returned if no such edges exist, including the case
                 where a vertex with index tail_index does not exist.
         '''
-        if not self.edges_by_tail_index.has_key(tail_index) :
+        if not tail_index in self.edges_by_tail_index:
             return []
         return self.edges_by_tail_index[tail_index]
 

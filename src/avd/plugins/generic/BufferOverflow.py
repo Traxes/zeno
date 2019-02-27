@@ -134,14 +134,16 @@ class PluginBufferOverflow(Plugin):
                             if loop_analysis(bb):
                                 # Slice to Source
                                 # TODO Currently only works for MLIL_STORE (e.g. <il: [rdi_1].q = [rsi].q>)
-                                src, src_visited_instr = slice.do_backward_slice_with_variable(instr,
-                                                                                               func_mlil.ssa_form,
-                                                                                               instr.ssa_form.vars_read[1]
-                                                                                               )
-                                dst, dst_visited_instr = slice.do_backward_slice(instr,
-                                                                                 func_mlil.ssa_form,
-                                                                                 instr.ssa_form.vars_read[0]
-                                                                                 )
+                                src, src_visited_instr = slice.do_backward_slice_with_variable(
+                                    instr,
+                                    func_mlil.ssa_form,
+                                    instr.ssa_form.vars_read[1]
+                                )
+                                dst, dst_visited_instr = slice.do_backward_slice_with_variable(
+                                    instr,
+                                    func_mlil.ssa_form,
+                                    instr.ssa_form.vars_read[0]
+                                )
                                 # TODO This is just a hotfix when src or dst is None.
                                 # TODO problem by CWE121_Stack_Based_Buffer_Overflow__char_type_overrun_memcpy_01
                                 if not src or not dst:
