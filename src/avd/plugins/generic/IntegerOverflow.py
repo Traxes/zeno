@@ -43,7 +43,7 @@ class PluginIntegerOverflow(Plugin):
                                 return True
 
     def _find_int_overflow(self):
-        for func in tqdm(self.bv.functions):
+        for func in tqdm(self.bv.functions, desc=self.name, leave=False):
             # Only check one function
             if not func.start == 0xd20:
                 continue

@@ -102,7 +102,7 @@ class ByteSwapModeler(BNILVisitor):
         # See if any constraints on the memcpy are directly influenced by
         # the variables that we know should be single bytes. This means
         # they likely constrain a potential byte swap.
-        for i, branch in self.var.branch_dependence.iteritems():
+        for i, branch in self.var.branch_dependence.items():
             for vr in self.function[i].vars_read:
                 if vr in self.byte_vars:
                     raise ModelIsConstrained()
@@ -515,7 +515,7 @@ class PluginFindHeartbleed(Plugin):
 
         dangerous_calls = []
 
-        for function, addr in tqdm(memcpy_refs):
+        for function, addr in tqdm(memcpy_refs, desc=self.name, leave=False):
             call_instr = function.get_low_level_il_at(addr).medium_level_il
             if self.check_memcpy(call_instr.ssa_form):
                 dangerous_calls.append((addr, call_instr.address))

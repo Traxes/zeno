@@ -24,7 +24,7 @@ class PluginSignedAnalysis(Plugin):
         super(PluginSignedAnalysis, self).__init__(bv)
         #func = binjaWrapper.get_mlil_function(self.bv, 0xf20)
         #self._function_sign_analysis_start(func)
-        for funcs in tqdm(self.bv.functions):
+        for funcs in tqdm(self.bv.functions, desc=self.name, leave=False):
             self._function_sign_analysis_start(funcs)
         return
 
