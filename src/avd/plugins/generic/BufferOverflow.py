@@ -122,7 +122,7 @@ class PluginBufferOverflow(Plugin):
 
     # TODO Add default Blacklist to avoid Parsing e.g. libc
     def deep_function_analysis(self):
-        for func in tqdm(self.bv.functions):
+        for func in tqdm(self.bv.functions, desc=self.name + " Deep Analysis", leave=False):
             func_mlil = func.medium_level_il
             for bb in func_mlil:
                 for instr in bb:
@@ -256,7 +256,7 @@ class PluginBufferOverflow(Plugin):
             self.deep_function_analysis()
 
         arch_offset = self.arch_offsets[self.bv.arch.name]
-        for syms in tqdm(self.bo_symbols):
+        for syms in tqdm(self.bo_symbols, desc=self.name, leave=False):
             symbol = self.bv.get_symbol_by_raw_name(syms)
             if symbol is not None:
                 for ref in self.bv.get_code_refs(symbol.address):

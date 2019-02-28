@@ -94,7 +94,7 @@ class PluginUninitializedVariable(Plugin):
         return False
 
     def _find_uninitialized_variables(self):
-        for funcs in tqdm(self.bv.functions):
+        for funcs in tqdm(self.bv.functions, desc=self.name, leave=False):
             control_flow = self._create_function_control_flow(funcs)
             mlil_func = funcs.medium_level_il
             for var in funcs.stack_layout:

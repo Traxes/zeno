@@ -6,6 +6,7 @@ import os
 from avd.loader import PluginLoader
 from avd.helper.drcov import DrcovData
 import ntpath
+import errno
 
 
 def is_valid_file(parser, arg):
@@ -23,9 +24,63 @@ def is_valid_file(parser, arg):
         else:
             return arg  # return an open file handle
 
+
 def path_leaf(path):
+    """
+    Gets a Path as argument and returns the filename
+    :param path: </path/to/file>
+    :return:
+    """
     head, tail = ntpath.split(path)
     return tail or ntpath.basename(head)
+
+
+def plugin_filter(args, plugins):
+    """
+    Filters the available plugins and can order it.
+    The blacklisting feature will always be the dominant one.
+    Thus even with Ordering it will filter out the Blacklist.
+
+    Whitelisting will prevent ordering and is mutually exclusive to the blacklisting feature.
+    If you want to test your ordered Plugin list just use the blacklisting feature to play around.
+    :param args:
+    :param plugins:
+    :return:
+    """
+    returning_plugins = list()
+    # Blacklist Parsing
+    if args.blacklist:
+        for blacklist_module in args.blacklist.replace(" ", "").split(","):
+            plugins.remove(blacklist_module)
+    # Whitelist Parsing
+    elif args.whitelist:
+        for whitelist_module in args.whitelist.replace(" ", "").split(","):
+            if whitelist_module in plugins:
+                returning_plugins.append(whitelist_module)
+        return returning_plugins
+
+    if args.plugin_order:
+        # Check if its a list
+        if "," in args.plugin_order:
+            for plugin_name in args.plugin_order.replace(" ", "").split(","):
+                if plugin_name in plugins:
+                    returning_plugins.append(plugin_name)
+        else:
+            # assume the given argument is a path to a file
+            if not os.path.exists(args.plugin_order):
+                OSError.NotADirectoryError(errno.ENOENT, os.strerror(errno.ENOENT), args.plugin_order)
+            else:
+                if not os.path.isfile(args.plugin_order):
+                    raise OSError.FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), args.plugin_order)
+                else:
+                    # Parse the given file (Plugins splitted by newlines)
+                    with open(args.plugin_order) as fin:
+                        for plugin_name in fin:
+                            if plugin_name in plugins:
+                                returning_plugins.append(plugin_name)
+
+    return returning_plugins if len(returning_plugins) > 0 else plugins
+
 
 def main():
     """
@@ -33,13 +88,21 @@ def main():
     :return:
     """
 
-    parser = argparse.ArgumentParser(description='AVD Commandline tool: Searches Automagically for Bugs')
+    parser = argparse.ArgumentParser(description='Zeno Commandline tool: Searches Automagically for Bugs')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-b', '--blacklist', type=str,
+                       help="Provide a blacklist seperated by commas. This will filter out not needed plugins")
+    group.add_argument('-w', '--whitelist', help='Whitelist modules', type=str)
+
+    parser.add_argument("--plugin_order", default=None, type=str,
+                        dest="plugin_order", help="Provide a file with the plugins in the correct order to be loaded")
+
     parser.add_argument('--deep',
                         dest='deep', action='store_true',
                         help='Uses Deep Search mode. This might take longer but it will also get a grasp of compiler optimizations')
     parser.add_argument('--search-path',
                         dest='search_path', default="/lib:/usr/lib",
-                        help='":" seperated list of paths to search libraries in')
+                        help='":" separated list of paths to search libraries in')
     parser.add_argument('target', metavar='target-path', nargs='+',
                         help='Binary to be analysed',
                         type=lambda x: is_valid_file(parser, x))
@@ -58,8 +121,9 @@ def main():
     plugins = PluginLoader(argparser=parser)
     args = parser.parse_args()
 
-    print(plugins.pprint_available_plugins())
+    #print(plugins.pprint_available_plugins())
 
+    filtered_plugins = plugin_filter(args, [name for name, _ in plugins.available_plugins])
 
     # Start Working with the Binaries here
     input_file = args.target
@@ -77,10 +141,9 @@ def main():
 
         print("arch: {0} | platform: {1}".format(bv.arch, bv.platform))
         bv.update_analysis_and_wait()
-        for name, _ in plugins.available_plugins:
-            # Just testing a single Plugin
-            #if not name == "PluginIntegerOverflow":
-            #    continue
+
+        print(filtered_plugins)
+        for name in filtered_plugins:
             plugin = plugins.get_plugin_instance(name)
             plugin.vulns = []
             plugin.run(bv, args.deep)
