@@ -121,8 +121,6 @@ def main():
     plugins = PluginLoader(argparser=parser)
     args = parser.parse_args()
 
-    #print(plugins.pprint_available_plugins())
-
     filtered_plugins = plugin_filter(args, [name for name, _ in plugins.available_plugins])
 
     # Start Working with the Binaries here
@@ -152,7 +150,6 @@ def main():
             del plugin  # This will print the vulns.
 
     return
-
 
 
 if __name__ == "__main__":

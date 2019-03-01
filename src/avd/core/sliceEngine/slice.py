@@ -3,6 +3,18 @@ from binaryninja import SSAVariable, Variable, MediumLevelILOperation
 from src.avd.helper import binjaWrapper
 
 
+class SlicedInstruction(object):
+    def __init__(self, instr=None, function_index=None, sliced_variable=None, sliced_address=None):
+        if instr is not None:
+            self.instr = instr
+        if function_index is not None:
+            self.function_index = function_index
+        if sliced_variable is not None:
+            self.sliced_variable = sliced_variable
+        if sliced_address is not None:
+            self.sliced_address = sliced_address
+
+
 # TODO Make forward slice to visit through non blacklisted functions
 def do_forward_slice(instruction, func):
     """
@@ -97,11 +109,13 @@ def handle_backward_slice_function(func, index):
     :param index:
     :return:
     """
+    visited_instructions = list()
     for ref in func.source_function.view.get_code_refs(func.source_function.start):
         previous_function = func.source_function.view.get_function_at(ref.function.start).medium_level_il
         calling_instr = previous_function[previous_function.get_instruction_start(ref.address)]
         new_slice_variable = calling_instr.ssa_form.vars_read[index]
-        return do_backward_slice_with_variable(calling_instr, previous_function.ssa_form, new_slice_variable)
+        visited_instructions += do_backward_slice_with_variable(calling_instr, previous_function.ssa_form, new_slice_variable)
+    return visited_instructions
 
 
 def get_sources_of_variable(bv, var):
@@ -186,13 +200,16 @@ def get_sources(bv, ref, instr, n):
     :param n:
     :return:
     """
-    slice_src, visited_src = do_backward_slice_with_variable(
+    visited_src = do_backward_slice_with_variable(
         instr,
         binjaWrapper.get_mlil_function(bv, ref.address),
         binjaWrapper.get_ssa_var_from_mlil_instruction(instr, n)
     )
+    possible_sources = list()
+    for sources in visited_src:
+        possible_sources += get_sources_of_variable(bv, sources.sliced_variable)
 
-    return get_sources_of_variable(bv, slice_src)
+    return list(set(possible_sources))
 
 
 def get_sources_with_mlil_function(bv, func, instr, n):
@@ -235,36 +252,89 @@ def do_backward_slice_with_variable(instruction, func, variable):
     :return:
     """
 
-    instruction_queue = {}
-
+    instruction_queue = list()
+    first_instruction = SlicedInstruction(
+        instruction.ssa_form,
+        instruction.ssa_form.instr_index,
+        variable,
+        hex(instruction.ssa_form.address)
+    )
     if variable.var.name:
-        instruction_queue.update({func.ssa_form.get_ssa_var_definition(variable): variable})
+        instruction_queue.append(first_instruction)
 
-    visited_instructions = [(instruction.ssa_form.instr_index, None)]
+    visited_instructions = [first_instruction]
 
     while instruction_queue:
 
-        visit_index = instruction_queue.popitem()
+        visit_index = instruction_queue.pop()
 
-        if visit_index is None or visit_index in visited_instructions:
+        if visit_index is None or len(
+                [x for x in visited_instructions if x.function_index != visit_index.function_index]) < 0:
             continue
 
-        instruction_to_visit = func[visit_index[0]]
+        instruction_to_visit = func[visit_index.function_index]
 
         if instruction_to_visit is None:
             continue
 
-        for var in instruction_to_visit.ssa_form.vars_read:
+        # Special Case for a edge case in BN
+        vars = list()
+        if instruction_to_visit.operation == MediumLevelILOperation.MLIL_STORE_SSA:
+            if variable in instruction_to_visit.vars_read:
+                if instruction_to_visit.vars_read.index(variable):
+                    vars = instruction_to_visit.src.vars_read
+                else:
+                    vars = instruction_to_visit.dest.vars_read
+            else:
+                vars = instruction_to_visit.ssa_form.vars_read
+        else:
+            vars = instruction_to_visit.ssa_form.vars_read
+
+        #vars = instruction_to_visit.ssa_form.src.vars_read if hasattr(instruction_to_visit.src, "vars_read") else instruction_to_visit.ssa_form.vars_read
+
+        for var in vars:
+        #for var in instruction_to_visit.ssa_form.vars_read:
             if type(var) is not SSAVariable:
-                # TODO Sometimes BN cannot assign it to SSA_FORM...
+                if len([x for x in visited_instructions if x.sliced_address != hex(instruction_to_visit.address)
+                                                           or x.function_index != instruction_to_visit.instr_index]) > 0:
+                    visited_instructions.append(SlicedInstruction(
+                        instruction_to_visit.ssa_form,
+                        instruction_to_visit.ssa_form.instr_index,
+                        var,
+                        hex(instruction_to_visit.ssa_form.address)
+                    ))
                 continue
             if var.var.name:
                 if func.ssa_form.get_ssa_var_definition(var) is not None:
-                    instruction_queue.update({func.ssa_form.get_ssa_var_definition(var): var})
+                    tmp_instr = func[func.ssa_form.get_ssa_var_definition(var)]
+                    list_of_addresses = [(x.sliced_address, x.function_index) for x in visited_instructions]
+                    if (hex(tmp_instr.address), tmp_instr.instr_index) not in list_of_addresses:
+                        instruction_queue.append(
+                            SlicedInstruction(
+                                tmp_instr,
+                                func.ssa_form.get_ssa_var_definition(var),
+                                var,
+                                hex(tmp_instr.address)
+                            )
+                        )
                 else:
-                    var, slice_visited_instructions = handle_backward_slice_function(func, var.var.index)
-                    visited_instructions += slice_visited_instructions
+                    # Traverse Functions Backwards
+                    if len([x for x in visited_instructions if x.sliced_address != hex(instruction_to_visit.address)
+                                                               or x.function_index != instruction_to_visit.instr_index]) > 0:
+                        visited_instructions.append(SlicedInstruction(
+                            instruction_to_visit.ssa_form,
+                            instruction_to_visit.ssa_form.instr_index,
+                            var,
+                            hex(instruction_to_visit.ssa_form.address)
+                        ))
+                    # Prevent multiple entries
+                    list_of_addresses = [(x.sliced_address, x.function_index) for x in visited_instructions]
+                    for sliced in handle_backward_slice_function(func, var.var.index):
+                        if (sliced.sliced_address, sliced.function_index) not in list_of_addresses:
+                            visited_instructions.append(sliced)
 
-        visited_instructions.append(visit_index)
+        if len([x for x in visited_instructions if x.sliced_address != visit_index.sliced_address
+                                                   or x.function_index != visit_index.function_index]) > 0:
+            visited_instructions.append(visit_index)
 
-    return var, visited_instructions
+    return visited_instructions

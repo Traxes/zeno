@@ -40,12 +40,13 @@ class Plugin(object):
         self._binaryView = bv
 
     def __del__(self):
-        for vuln in self.vulns:
-            if len(self._traces) > 0:
-                bb = get_basic_block_from_instr(self.bv, vuln.instr.address)
-                vuln.cmd_print_finding(self._traces, bb)
-            else:
-                vuln.cmd_print_finding()
+        if len(self.vulns) > 0:
+            for vuln in sorted(self.vulns, key=lambda x: x.probability, reverse=True):
+                if len(self._traces) > 0:
+                    bb = get_basic_block_from_instr(self.bv, vuln.instr.address)
+                    vuln.cmd_print_finding(self._traces, bb)
+                else:
+                    vuln.cmd_print_finding()
 
     @property
     def bv(self):
