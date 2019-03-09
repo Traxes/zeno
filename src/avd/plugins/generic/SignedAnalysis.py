@@ -20,10 +20,8 @@ class PluginSignedAnalysis(Plugin):
     def set_bv(self, bv):
         self.bv = bv
 
-    def run(self, bv=None, deep=None, traces=None):
+    def run(self, bv=None, args=None, traces=None):
         super(PluginSignedAnalysis, self).__init__(bv)
-        #func = binjaWrapper.get_mlil_function(self.bv, 0xf20)
-        #self._function_sign_analysis_start(func)
         for funcs in tqdm(self.bv.functions, desc=self.name, leave=False):
             self._function_sign_analysis_start(funcs)
         return

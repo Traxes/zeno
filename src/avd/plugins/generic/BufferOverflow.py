@@ -83,7 +83,7 @@ class PluginBufferOverflow(Plugin):
     cmd_name = "bo"
     cmd_help = "Search for Known Buffer Overflow patterns"
 
-    def __init__(self, bv=None):
+    def __init__(self, bv=None, args=None):
         super(PluginBufferOverflow, self).__init__(bv)
         self.arch_offsets = {
             'armv7': 4,
@@ -91,6 +91,7 @@ class PluginBufferOverflow(Plugin):
             'x86': 0,
         }
         self.bv = bv
+        self.args = args
         self.bo_symbols = {
             "_memmove": BoParams(dst=0, src=1, n=2),
             "memmove": BoParams(dst=0, src=1, n=2),
@@ -124,7 +125,7 @@ class PluginBufferOverflow(Plugin):
     def deep_function_analysis(self):
         for func in tqdm(self.bv.functions, desc=self.name + " Deep Analysis", leave=False):
             func_mlil = func.medium_level_il
-            for bb in func_mlil:
+            for bb in tqdm(func_mlil, desc=self.name + " Deep: Basic Blocks in function", leave=False):
                 for instr in bb:
                     # MLIL Store might be interesting due to Compiler optimizations
                     if instr.operation == MediumLevelILOperation.MLIL_STORE:
@@ -134,15 +135,17 @@ class PluginBufferOverflow(Plugin):
                             if loop_analysis(bb):
                                 # Slice to Source
                                 # TODO Currently only works for MLIL_STORE (e.g. <il: [rdi_1].q = [rsi].q>)
-                                src_visited_instr = slice.do_backward_slice_with_variable(
+                                src_visited_instr = self.slice_engine.do_backward_slice_with_variable(
                                     instr,
                                     func_mlil.ssa_form,
-                                    instr.ssa_form.vars_read[1]
+                                    instr.ssa_form.vars_read[1],
+                                    list()
                                 )
-                                dst_visited_instr = slice.do_backward_slice_with_variable(
+                                dst_visited_instr = self.slice_engine.do_backward_slice_with_variable(
                                     instr,
                                     func_mlil.ssa_form,
-                                    instr.ssa_form.vars_read[0]
+                                    instr.ssa_form.vars_read[0],
+                                    list()
                                 )
                                 # TODO ugly hack.
                                 # Just take the last Sliced Variable (might fail when tracing functions backwards)
@@ -179,11 +182,11 @@ class PluginBufferOverflow(Plugin):
                                         # Probably dealing with a reference. Currently not implemented in BN.
                                         # Hence.. parsing manually
                                         # TODO port it to a function
-                                        for n in slice.get_manual_var_uses(func_mlil, src):
+                                        for n in self.slice_engine.get_manual_var_uses(func_mlil, src):
                                             if n not in src_visited_instr:
                                                 if src in func_mlil[n].vars_read:
                                                     for vs in func_mlil[n].vars_written:
-                                                        for ea in slice.do_forward_slice(func_mlil[n], func_mlil):
+                                                        for ea in self.slice_engine.do_forward_slice(func_mlil[n], func_mlil):
                                                             if func_mlil[ea].operation == MediumLevelILOperation.MLIL_CALL:
                                                                 if self.bv.get_function_at(func_mlil[ea].dest.constant).name in sources.user_sources:
                                                                     # Check wheter it is in known user input sources Increase Probability
@@ -253,18 +256,20 @@ class PluginBufferOverflow(Plugin):
                                       100)
                     self.vulns.append(v)
 
-    def run(self, bv=None, deep=True):
+    def run(self, bv=None, args=None):
         if bv is None:
             raise Exception("No state was provided by Binary Ninja. Something must be wrong")
-        super(PluginBufferOverflow, self).__init__(bv)
-        if deep:
-            self.deep_function_analysis()
+        super(PluginBufferOverflow, self).__init__(bv, args)
+        if args:
+            if args.deep:
+                self.deep_function_analysis()
 
         arch_offset = self.arch_offsets[self.bv.arch.name]
         for syms in tqdm(self.bo_symbols, desc=self.name, leave=False):
             symbol = self.bv.get_symbol_by_raw_name(syms)
             if symbol is not None:
-                for ref in self.bv.get_code_refs(symbol.address):
+                for ref in tqdm(self.bv.get_code_refs(symbol.address),
+                                desc=self.name + ": " + syms + " References", leave=False):
                     current_function = ref.function
                     addr = ref.address
                     try:
@@ -426,7 +431,7 @@ class PluginBufferOverflow(Plugin):
                                 self.vulns.append(v)
                             elif size == dst_size:
                                 # Check if the Format String ends the string properly
-                                last_format = format_vars.keys()[-1]
+                                last_format = list(format_vars.keys())[-1]
                                 ending_strings = ["\n", "\r", "\x00"]
                                 if not any(x in format_string[format_string.rfind(last_format) + len(last_format):] for x in
                                            ending_strings):
@@ -470,7 +475,7 @@ class PluginBufferOverflow(Plugin):
                             """
                             # Follow N
                             instr = binjaWrapper.get_medium_il_instruction(bv, ref.address)
-                            slice_sources = slice.get_sources(bv, ref, instr, bo_n)
+                            slice_sources = self.slice_engine.get_sources(bv, ref, instr, bo_n)
                             intersection_slices = [x for x in slice_sources if x in sources.user_sources]
                             if intersection_slices:
                                 text = "{} 0x{:x}\t{}\n".format(ref.function.name, addr, print_f_call(cf))

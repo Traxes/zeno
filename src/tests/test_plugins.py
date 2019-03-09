@@ -4,11 +4,19 @@ import binaryninja
 from src.avd.loader import PluginLoader
 
 
+class ArgParseMock(object):
+    """
+    Mocking argparse
+    """
+    def __init__(self, deep, fast):
+        self.deep = deep
+        self.fast = fast
+
+
 class TestBufferOverflows(unittest.TestCase):
 
     def setUp(self):
         self._plugins = PluginLoader()
-
 
     def test_buffer_overflow_1(self):
         """
@@ -19,7 +27,8 @@ class TestBufferOverflows(unittest.TestCase):
         plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
-        plugin.run(bv, False)
+        args = ArgParseMock(False, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -103,7 +112,8 @@ class TestBufferOverflows(unittest.TestCase):
         plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -123,7 +133,8 @@ class TestBufferOverflows(unittest.TestCase):
         plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -144,7 +155,8 @@ class TestBufferOverflows(unittest.TestCase):
         plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -165,7 +177,8 @@ class TestBufferOverflows(unittest.TestCase):
         plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -185,7 +198,8 @@ class TestBufferOverflows(unittest.TestCase):
         plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
         plugin.vulns = []
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -205,7 +219,8 @@ class TestBufferOverflows(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./bin/Test10/bo")
         plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -222,7 +237,8 @@ class TestBufferOverflows(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./bin/Test11/bo")
         plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -241,7 +257,8 @@ class TestBufferOverflows(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./bin/Test12/bo")
         plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -252,7 +269,7 @@ class TestBufferOverflows(unittest.TestCase):
         self.assertIn(0x754, addresses), 'Could not find the scanf Bug'
         self.assertGreater(highprob, 60), 'Could not follow to find the source'
 
-    def test_buffer_overflow_12(self):
+    def test_buffer_overflow_13(self):
         """
         Testcase to find two scanf Vulnerabilities.
         :return:
@@ -260,7 +277,8 @@ class TestBufferOverflows(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./bin/Test13/bo")
         plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -272,7 +290,7 @@ class TestBufferOverflows(unittest.TestCase):
         self.assertIn(0x76c, addresses), 'Could not find the second scanf Bug'
         self.assertGreater(highprob, 60), 'Could not follow to find the source'
 
-    def test_buffer_overflow_13(self):
+    def test_buffer_overflow_memcpy_1(self):
         """
         Testcase to find an often occurring memcpy pattern.
         :return:
@@ -280,7 +298,8 @@ class TestBufferOverflows(unittest.TestCase):
         bv = binaryninja.BinaryViewType.get_view_of_file("./bin/TestMcpy/bo")
         plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
         self.assertIsNotNone(plugin), 'Could not load Plugin Buffer Overflow'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -328,7 +347,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_01.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -348,7 +368,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_02.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -368,7 +389,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_03.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -388,7 +410,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_04.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -408,7 +431,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_05.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -428,7 +452,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_06.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -448,7 +473,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_07.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -468,7 +494,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_08.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -488,7 +515,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_09.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -508,7 +536,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_10.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -528,7 +557,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_11.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -548,7 +578,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_12.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -568,7 +599,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_13.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -588,7 +620,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_15.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -608,7 +641,8 @@ class TestBufferOverflows(unittest.TestCase):
                                                          "CWE457_Use_of_Uninitialized_Variable__char_pointer_17.out")
         plugin = self._plugins.get_plugin_instance('PluginUninitializedVariable')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginUninitializedVariable'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0
@@ -630,7 +664,8 @@ class TestBufferOverflows(unittest.TestCase):
         )
         plugin = self._plugins.get_plugin_instance('PluginSignedAnalysis')
         self.assertIsNotNone(plugin), 'Could not load Plugin PluginSignedAnalysis'
-        plugin.run(bv, deep=True)
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
         self.assertIsNone(plugin.error), 'An error occurred'
         addresses = []
         highprob = 0

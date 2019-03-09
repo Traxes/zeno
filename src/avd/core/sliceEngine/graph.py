@@ -172,7 +172,15 @@ class Graph:
 
         # An entry_index simplifies lots of stuff, like computing dominators
         self.entry_index = entry_index
+        self.threshold = None
 
+    def set_threshold(self, threshold):
+        """
+        Defining a Threshold to limit really big Functions for faster performance.
+        :param threshold: Number (usually 100000 is good)
+        :return:
+        """
+        self.threshold = threshold
 
     def add_edge(self, head, tail, data=None):
         '''
@@ -559,6 +567,9 @@ class Graph:
         return map(lambda x: x.data, [self.vertices[y] for y in self.vertices])
 
     def _find_all_paths(self, node, nodes, node_count, result, cur=list()):
+        if self.threshold:
+            if len(result) > self.threshold:
+                return
         if node not in nodes:
             nodes.append(node)
             cur = [node]
