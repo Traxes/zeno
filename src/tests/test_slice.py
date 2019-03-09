@@ -2,7 +2,7 @@ import unittest
 import binaryninja
 
 from src.avd.loader import PluginLoader
-from src.avd.core.sliceEngine import slice
+from src.avd.core.sliceEngine.slice import SliceEngine
 from src.avd.helper import binjaWrapper
 
 class TestSliceEngine(unittest.TestCase):
@@ -22,10 +22,12 @@ class TestSliceEngine(unittest.TestCase):
             for ref in bv.get_code_refs(symbol.address):
                 instr = binjaWrapper.get_medium_il_instruction(bv, ref.address)
                 dest_var = binjaWrapper.get_ssa_var_from_mlil_instruction(instr, 0)
-                visited_instructions = slice.do_backward_slice_with_variable(
+                slice_class = SliceEngine()
+                visited_instructions = slice_class.do_backward_slice_with_variable(
                     instr,
                     binjaWrapper.get_mlil_function(bv, ref.address).ssa_form,
-                    dest_var
+                    dest_var,
+                    list()
                 )
                 print(visited_instructions)
 

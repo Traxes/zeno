@@ -92,14 +92,19 @@ def main():
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-b', '--blacklist', type=str,
                        help="Provide a blacklist seperated by commas. This will filter out not needed plugins")
-    group.add_argument('-w', '--whitelist', help='Whitelist modules', type=str)
+    group.add_argument('-wl', '--whitelist', help='Whitelist modules', type=str)
 
     parser.add_argument("--plugin_order", default=None, type=str,
                         dest="plugin_order", help="Provide a file with the plugins in the correct order to be loaded")
 
     parser.add_argument('--deep',
                         dest='deep', action='store_true',
-                        help='Uses Deep Search mode. This might take longer but it will also get a grasp of compiler optimizations')
+                        help='Uses Deep Search mode. '
+                             'This might take longer but it will also get a grasp of compiler optimizations')
+    parser.add_argument('--fast',
+                        dest='fast', action='store_true',
+                        help='Uses Fast Search mode. '
+                             'It will skip a throughout search while slicing and just uses the first it finds')
     parser.add_argument('--search-path',
                         dest='search_path', default="/lib:/usr/lib",
                         help='":" separated list of paths to search libraries in')
@@ -120,8 +125,6 @@ def main():
 
     plugins = PluginLoader(argparser=parser)
     args = parser.parse_args()
-
-    #print(plugins.pprint_available_plugins())
 
     filtered_plugins = plugin_filter(args, [name for name, _ in plugins.available_plugins])
 
@@ -146,13 +149,12 @@ def main():
         for name in filtered_plugins:
             plugin = plugins.get_plugin_instance(name)
             plugin.vulns = []
-            plugin.run(bv, args.deep)
+            plugin.run(bv, args)
             if args.coverage:
                 plugin.set_traces(cov_bb)
             del plugin  # This will print the vulns.
 
     return
-
 
 
 if __name__ == "__main__":

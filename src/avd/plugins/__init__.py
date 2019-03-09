@@ -5,6 +5,7 @@ from binaryninja.binaryview import BinaryView
 import sys
 from collections import Counter
 from ..helper.binjaWrapper import get_basic_block_from_instr
+from src.avd.core.sliceEngine.slice import SliceEngine
 
 #from .bo import PluginBufferOverflow
 
@@ -36,16 +37,25 @@ class Plugin(object):
     # BinaryView from BinaryNinja
     _binaryView = None
 
-    def __init__(self, bv):
+    # Arguments for better handling
+    _args = None
+
+    # Reference to the Slice Engine
+    slice_engine = None
+
+    def __init__(self, bv, args=None):
         self._binaryView = bv
+        self._args = args
+        self.slice_engine = SliceEngine(args)
 
     def __del__(self):
-        for vuln in self.vulns:
-            if len(self._traces) > 0:
-                bb = get_basic_block_from_instr(self.bv, vuln.instr.address)
-                vuln.cmd_print_finding(self._traces, bb)
-            else:
-                vuln.cmd_print_finding()
+        if len(self.vulns) > 0:
+            for vuln in sorted(self.vulns, key=lambda x: x.probability, reverse=True):
+                if len(self._traces) > 0:
+                    bb = get_basic_block_from_instr(self.bv, vuln.instr.address)
+                    vuln.cmd_print_finding(self._traces, bb)
+                else:
+                    vuln.cmd_print_finding()
 
     @property
     def bv(self):
