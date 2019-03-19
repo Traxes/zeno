@@ -149,7 +149,12 @@ def main():
         for name in filtered_plugins:
             plugin = plugins.get_plugin_instance(name)
             plugin.vulns = []
+            #try:
             plugin.run(bv, args)
+            #except:
+                # Catch All to Continue with the next Plugin
+            #    print("Plugin {} did fail for some Reason. Continuing with the next one".format(name))
+            #    pass
             if args.coverage:
                 plugin.set_traces(cov_bb)
             del plugin  # This will print the vulns.

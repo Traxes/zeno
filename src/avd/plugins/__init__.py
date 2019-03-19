@@ -46,7 +46,7 @@ class Plugin(object):
     def __init__(self, bv, args=None):
         self._binaryView = bv
         self._args = args
-        self.slice_engine = SliceEngine(args)
+        self.slice_engine = SliceEngine(args, bv)
 
     def __del__(self):
         if len(self.vulns) > 0:

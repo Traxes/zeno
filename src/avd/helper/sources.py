@@ -4,4 +4,5 @@ This File should contain known sources that might indicate an attacker controlle
 
 user_sources = [
     "fgets",
+    "tlMain",  # Trustlets Symbol on for Kinabi Drivers
 ]

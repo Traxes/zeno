@@ -675,5 +675,48 @@ class TestBufferOverflows(unittest.TestCase):
 
         self.assertIn(0x100f, addresses), 'Could not find the malloc Problem'
 
+    def test_heartbleed(self):
+        """
+        Testcase to find Heartbleed in a Vulnerable OpenSSL version.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file(
+            "bin/Heartbleed/openssl.bndb"
+        )
+        plugin = self._plugins.get_plugin_instance('PluginFindHeartbleed')
+        self.assertIsNotNone(plugin), 'Could not load Plugin PluginFindHeartbleed'
+        args = ArgParseMock(True, False)
+        plugin.run(bv, args)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 69
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0x80af204, addresses), 'Could not find the Hearbleed Problem'
+
+    def test_trustlet(self):
+        """
+        Testcase to find bugs in ARM Trustlets from the Samsung S6.
+        :return:
+        """
+        bv = binaryninja.BinaryViewType.get_view_of_file(
+            "bin/Trustlets/fffffffff0000000000000000000001b.tlbin.bndb"
+        )
+        plugin = self._plugins.get_plugin_instance('PluginBufferOverflow')
+        self.assertIsNotNone(plugin), 'Could not load Plugin PluginBufferOverflow'
+        args = ArgParseMock(False, False)
+        plugin.run(bv, args)
+        self.assertIsNone(plugin.error), 'An error occurred'
+        addresses = []
+        highprob = 69
+        for vuln in plugin.vulns:
+            addresses.append(vuln.instr.address)
+            highprob = vuln.probability if vuln.probability > highprob else highprob
+
+        self.assertIn(0x15be, addresses), 'Could not find the Memcpy Overflow in function 0x15a8'
+        self.assertIn(0x2272, addresses), 'Could not find the Memcpy Overflow in function 0x1dee'
+
 if __name__ == '__main__':
     unittest.main()

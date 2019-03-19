@@ -9,6 +9,8 @@ from z3 import (UGT, ULT, And, Array, BitVec, BitVecSort, Concat, Extract,
                 LShR, Not, Or, Solver, ZeroExt, simplify, unsat)
 
 from src.avd.reporter.vulnerability import Vulnerability
+from functools import reduce
+from src.avd.helper import binjaWrapper
 
 # idea: assume byte swapping means that there will be 2+ assignments
 # that must be a single byte. Each time an MLIL_SET_VAR_SSA operation
@@ -45,6 +47,8 @@ def identify_byte(var, function):
         except AttributeError:
             return None
         except IndexError:
+            return None
+        except TypeError:
             return None
     else:
         possible_values = var.possible_values
@@ -181,7 +185,7 @@ class ByteSwapModeler(BNILVisitor):
         # If this value can never be larger than a byte,
         # then it must be one of the bytes in our swap.
         # Add it to a list to check later.
-        if src is not None and not isinstance(src, (int, long)):
+        if src is not None and not isinstance(src, (int, int)):
             value_range = identify_byte(expr.src, self.function)
             if value_range is not None:
                 self.solver.add(
@@ -230,7 +234,7 @@ class ByteSwapModeler(BNILVisitor):
             # If this value can never be larger than a byte,
             # then it must be one of the bytes in our swap.
             # Add it to a list to check later.
-            if src is not None and not isinstance(src, (int, long)):
+            if src is not None and not isinstance(src, (int, int)):
                 value_range = identify_byte(var, self.function)
                 if value_range is not None:
                     self.solver.add(
@@ -481,6 +485,8 @@ class PluginFindHeartbleed(Plugin):
         return
 
     def check_memcpy(self, memcpy_call):
+        if not hasattr(memcpy_call, "params"):
+            return False
         if len(memcpy_call.params) < 3:
             # TODO Binary ninja failed to get the correct parameters
             return False
@@ -506,9 +512,13 @@ class PluginFindHeartbleed(Plugin):
     def _find_heartbleed(self):
         if not 'memcpy' in self.bv.symbols:
             return
+        if isinstance(self.bv.symbols['memcpy'], list):
+            _memcpy_Symbol = self.bv.get_code_refs(self.bv.symbols['memcpy'][0].address)
+        else:
+            _memcpy_Symbol = self.bv.get_code_refs(self.bv.symbols['memcpy'].address)
         memcpy_refs = [
             (ref.function, ref.address)
-            for ref in self.bv.get_code_refs(self.bv.symbols['memcpy'][0].address)
+            for ref in _memcpy_Symbol
         ]
 
         print('Checking {} memcpy calls'.format(len(memcpy_refs)))
@@ -516,11 +526,15 @@ class PluginFindHeartbleed(Plugin):
         dangerous_calls = []
 
         for function, addr in tqdm(memcpy_refs, desc=self.name, leave=False):
-            call_instr = function.get_low_level_il_at(addr).medium_level_il
-            if self.check_memcpy(call_instr.ssa_form):
-                dangerous_calls.append((addr, call_instr.address))
+            call_instr = binjaWrapper.get_medium_il_instruction(self.bv, addr)
 
-        for call, func in dangerous_calls:
+            #call_instr = function.get_low_level_il_at(addr).medium_level_il
+            if not call_instr:
+                continue
+            if self.check_memcpy(call_instr.ssa_form):
+                dangerous_calls.append((addr, call_instr.address, call_instr))
+
+        for call, func, call_instr in dangerous_calls:
             text = "{} 0x{:x}\n".format(
                 self.bv.get_symbol_at(self.bv.get_functions_containing(func)[0].start).name,
                 call
@@ -529,7 +543,7 @@ class PluginFindHeartbleed(Plugin):
 
             vuln = Vulnerability("Untrusted Source in Memcpy!",
                                  text,
-                                 None,
+                                 call_instr,
                                  "Potential Untrusted Source.",
                                  70)
             self.vulns.append(vuln)

@@ -4,7 +4,6 @@ from src.avd.helper import binjaWrapper, sources
 import re
 import collections
 import traceback
-from src.avd.core.sliceEngine import slice
 from src.avd.core.sliceEngine.loopDetection import loop_analysis
 from binaryninja import MediumLevelILOperation, RegisterValueType, SSAVariable
 from sys import maxsize
@@ -31,11 +30,9 @@ class FakeRegister(object):
         self.is_constant = constant
 
 
-def get_params(addr):
-    for blocks in addr.function.medium_level_il:
-        for instr in blocks:
-            if instr.address == addr.address:
-                return instr.params
+def get_params(bv, addr):
+    return binjaWrapper.get_medium_il_instruction(bv, addr.address).params
+
 
 
 def parse_format_string(s, params):
@@ -51,11 +48,14 @@ def calc_size(var, func):
         return None
     if SSAVariable == type(var):
         var = var.var
-
-    if len(func.stack_layout) - 1 == func.stack_layout.index(var):
-        return abs(var.storage)
-    else:
-        return abs(var.storage) - abs(func.stack_layout[func.stack_layout.index(var) + 1].storage)
+    try:
+        if len(func.stack_layout) - 1 == func.stack_layout.index(var):
+            return abs(var.storage)
+        else:
+            return abs(var.storage) - abs(func.stack_layout[func.stack_layout.index(var) + 1].storage)
+    except ValueError:
+        # For some odd reason BN does screw up the stack layout.. bug?
+        return 0
 
 
 # TODO Move to PrettyPrinter Class
@@ -89,6 +89,7 @@ class PluginBufferOverflow(Plugin):
             'armv7': 4,
             'x86_64': 0,
             'x86': 0,
+            'thumb2': 0,
         }
         self.bv = bv
         self.args = args
@@ -154,9 +155,18 @@ class PluginBufferOverflow(Plugin):
                                 if not src_visited_instr or not dst_visited_instr:
                                     continue
                                 else:
+                                    if len(dst_visited_instr[-1].instr.vars_read) == 0 or \
+                                            len(src_visited_instr[-1].instr.vars_read) == 0:
+                                        # Architecture spezific where Instructions
+                                        # can have direkt assignments to Registers
+                                        # TODO Fix for partial assigments in ARM e.g [r4 + 0x11].b = (r6_1).b
+                                        continue
                                     src = src_visited_instr[-1].instr.vars_read[0]
                                     dst = dst_visited_instr[-1].instr.vars_read[0]
-
+                                if SSAVariable == type(src):
+                                    src = src.var
+                                if SSAVariable == type(dst):
+                                    dst = dst.var
                                 src_size = calc_size(src, src.function)
                                 dst_size = calc_size(dst, dst.function)
                                 if src_size > dst_size:
@@ -182,13 +192,15 @@ class PluginBufferOverflow(Plugin):
                                         # Probably dealing with a reference. Currently not implemented in BN.
                                         # Hence.. parsing manually
                                         # TODO port it to a function
+                                        #func_mlil = func_mlil.ssa_form
+                                        func_mlil_ssa = func_mlil.ssa_form
                                         for n in self.slice_engine.get_manual_var_uses(func_mlil, src):
                                             if n not in src_visited_instr:
                                                 if src in func_mlil[n].vars_read:
                                                     for vs in func_mlil[n].vars_written:
-                                                        for ea in self.slice_engine.do_forward_slice(func_mlil[n], func_mlil):
-                                                            if func_mlil[ea].operation == MediumLevelILOperation.MLIL_CALL:
-                                                                if self.bv.get_function_at(func_mlil[ea].dest.constant).name in sources.user_sources:
+                                                        for ea in self.slice_engine.do_forward_slice(func_mlil[n], func_mlil_ssa):
+                                                            if func_mlil_ssa[ea].operation == MediumLevelILOperation.MLIL_CALL_SSA:
+                                                                if self.bv.get_function_at(func_mlil_ssa[ea].dest.constant).name in sources.user_sources:
                                                                     # Check wheter it is in known user input sources Increase Probability
                                                                     v.append_reason(
                                                                         "The Source Location was used by a known Source")
@@ -203,9 +215,6 @@ class PluginBufferOverflow(Plugin):
     def handle_single_destination(format_vars, ref, src_size, current_function):
         for f_str in format_vars:
             # TODO check if possible to delete
-            #v = ref.function.get_stack_var_at_frame_offset(format_vars[f_str].offset,
-             #                                              current_function.start)
-
             size = 0
             # TODO Handle arch dependent max Size of int/double etc
             if "s" in f_str or "c" in f_str:
@@ -319,7 +328,7 @@ class PluginBufferOverflow(Plugin):
                                 dst_size = 0
                             else:
                                 dst_var = FakeRegister(dst.reg)
-                                dst_size = 0
+                                dst_size = maxsize
                         else:
                             dst_var = ref.function.get_stack_var_at_frame_offset(dst.offset + arch_offset,
                                                                                  current_function.start)
@@ -383,12 +392,15 @@ class PluginBufferOverflow(Plugin):
                                 # TODO Fix tracebacks
                                 #traceback.print_exc()
                                 try:
-                                    real_param_name = get_params(ref)[bo_n].src.name
+                                    real_param_name = get_params(self.bv, ref)[bo_n].src.name
                                     n = FakeRegister(real_param_name)
                                     n_val = real_param_name
                                 except IndexError:
                                     # TODO binary ninja had a problem with correctly resolving the function parameters.
                                     # Need to try it manually
+                                    continue
+                                except AttributeError:
+                                    # Can happen on if instructions beeing referenced
                                     continue
 
                         else:
@@ -403,7 +415,7 @@ class PluginBufferOverflow(Plugin):
                     # Handling Format Strings like scanf
                     if bo_format is not None:
                         params = []
-                        for i in range(0, len(get_params(ref))):
+                        for i in range(0, len(get_params(self.bv, ref))):
                             params.append(current_function.get_parameter_at(addr, None, i))
                         format_string = binjaWrapper.get_constant_string(self.bv,
                                                                          params[self.bo_symbols.get(syms).Format].value)
@@ -475,7 +487,7 @@ class PluginBufferOverflow(Plugin):
                             """
                             # Follow N
                             instr = binjaWrapper.get_medium_il_instruction(bv, ref.address)
-                            slice_sources = self.slice_engine.get_sources(bv, ref, instr, bo_n)
+                            slice_sources = self.slice_engine.get_sources2(bv, instr, n)
                             intersection_slices = [x for x in slice_sources if x in sources.user_sources]
                             if intersection_slices:
                                 text = "{} 0x{:x}\t{}\n".format(ref.function.name, addr, print_f_call(cf))
@@ -523,6 +535,4 @@ class PluginBufferOverflow(Plugin):
                         if hasattr(src_var, "name") and hasattr(n, "name"):
                             if src_var.name == "<undetermined>" and n.name == "<undetermined>":
                                 pass
-                                #print("\t\t\033[93mPotential Overflow!")
-
 
