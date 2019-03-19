@@ -1,11 +1,13 @@
 import copy
 import sys
 # TODO Strip down to only important parts
+# Credits https://github.com/endeav0r/binaryninja-varslice
 
-def set_intersection (sets) :
-    '''
+
+def set_intersection(sets):
+    """
     Takes a list of lists, and returns the intersection of those lists.
-    '''
+    """
     if len(sets) < 1 :
         return sets
     intersection = copy.deepcopy(sets[0])
@@ -19,68 +21,71 @@ def set_intersection (sets) :
     return intersection
 
 
-def set_equivalence (sets) :
-    '''
+def set_equivalence(sets):
+    """
     Takes a list of lists, and returns True if all lists are equivalent, False
     otherwise.
-    '''
+    """
     # An empty set is equivalent
-    if len(sets) < 0 :
+    if len(sets) < 0:
         return True
     # Sets of differing length are obviously not equivalent
     l = len(sets[0])
-    for s in sets :
-        if len(s) != l :
+    for s in sets:
+        if len(s) != l:
             return False
 
     sets_copy = copy.deepcopy(sets)
-    for i in range(len(sets_copy)) :
+    for i in range(len(sets_copy)):
         sets_copy[i].sort()
 
-    for i in range(len(sets_copy[0])) :
-        for j in range(len(sets_copy)) :
-            if sets_copy[0][i] != sets_copy[j][i] :
+    for i in range(len(sets_copy[0])):
+        for j in range(len(sets_copy)):
+            if sets_copy[0][i] != sets_copy[j][i]:
                 return False
 
     return True
-    
 
-def set_union (sets) :
-    if len(sets) < 0 :
+
+def set_union(sets):
+    if len(sets) < 0:
         return []
 
     result = []
-    for s in sets :
-        for ss in s :
-            if ss not in result :
+    for s in sets:
+        for ss in s:
+            if ss not in result:
                 result.append(ss)
     return result
 
 
-def find_loop_dominator (dominators, loop) :
+def find_loop_dominator(dominators, loop):
     dominator_sets = []
     # Get dominator sets for all nodes in loop
-    for d in dominators :
-        if d in loop :
+    for d in dominators:
+        if d in loop:
             dominator_sets.append(copy.deepcopy(dominators[d]))
     # Remove all indicies not in loop
-    for s in dominator_sets :
+    for s in dominator_sets:
         i = 0
         while i < len(s) :
-            if s[i] not in loop :
+            if s[i] not in loop:
                 del s[i]
             else :
                 i += 1
     # The one dominator all vertices have in common is the head of this loop
-    loop_dominator = set_intersection(dominator_sets)[0]
+    if len(set_intersection(dominator_sets)):
+        loop_dominator = set_intersection(dominator_sets)[0]
+    else:
+        return None
     return loop_dominator
 
 
-def edge_list_get_tail_index (edge_list, tail_index) :
-    '''
+def edge_list_get_tail_index(edge_list, tail_index):
+    """
     Takes a list of edges and returns an edge if the tail_index matches the
     given index, or None otherwise.
-    '''
+    """
     for edge in edge_list :
         if edge.tail_index == tail_index :
             return edge
@@ -88,46 +93,46 @@ def edge_list_get_tail_index (edge_list, tail_index) :
 
 
 class Edge:
-    '''
+    """
     This class represents a generic edge in a graph. It does not contain
     references to its head and tail directly, but instead indicies to the head
     and tail.
 
     You should not store references to this edge directly.
-    '''
+    """
     def __init__(self, graph, index, head_index, tail_index, data=None):
-        '''
+        """
         Create an edge. You should not call this directly. Call
         graph.add_edge() instead.
-        '''
+        """
         self.graph = graph
         self.index = index
         self.head_index = head_index
         self.tail_index = tail_index
         self.data = data
 
-    def head (self) :
-        '''
+    def head(self):
+        """
         Returns a reference to the head vertex of this edge.
-        '''
+        """
         return self.graph.vertex_from_index(self.head_index)
 
     def tail(self):
-        '''
+        """
         Returns a reference to the tail vertex of this edge.
-        '''
+        """
         return self.graph.vertex_from_index(self.tail_index)
 
 
 class Vertex:
-    '''
+    """
     This class represents a generic vertex in a graph.
-    '''
+    """
     def __init__(self, graph, index, data=None):
-        '''
+        """
         Creates a vertex. You should not call this directly. Call
         graph.add_vertex() instead.
-        '''
+        """
         self.graph = graph
         self.index = index
         self.data = data
@@ -183,16 +188,16 @@ class Graph:
         self.threshold = threshold
 
     def add_edge(self, head, tail, data=None):
-        '''
+        """
         Adds an edge to the graph by giving references to the head and tail
         vertices.
         This is just a wrapper for add_edge_by_indices.
-        '''
+        """
         return self.add_edge_by_indices(head.index, tail.index, data)
 
 
     def add_edge_by_indices(self, head_index, tail_index, data=None):
-        '''
+        """
         Adds an edge to the graph. Will fail if:
         1) There is no vertex in the graph for head_index.
         2) There is no vertex in the graph for tail_index.
@@ -203,7 +208,7 @@ class Graph:
         @param data Any data you would like associated with this edge.
         @return A reference to the new edge if it was created, or None on
                 failure.
-        '''
+        """
 
         # Ensure we have a valid head and tail
         if not head_index in self.vertices:
@@ -213,7 +218,7 @@ class Graph:
 
         # If we already have an edge here, don't add a new one
         if head_index in self.edges_by_head_index \
-           and edge_list_get_tail_index(self.edges_by_head_index[head_index], tail_index) :
+           and edge_list_get_tail_index(self.edges_by_head_index[head_index], tail_index):
             return None
 
         # Create our new edge
@@ -237,9 +242,8 @@ class Graph:
         # Return the edge
         return edge
 
-
     def add_vertex(self, index=None, data=None):
-        '''
+        """
         Adds a vertex to the graph. Index represents a desired index for this
         vertex, such as an address in a CFG, and data represents data you would
         like to associate with this vertex. If no index is given, one will be
@@ -249,8 +253,8 @@ class Graph:
         @param data Data you would like to associate with this vertex
         @return The newly created vertex, or None if the vertex could not be
                 created.
-        '''
-        if index == None:
+        """
+        if index is None:
             index = self.next_vertex_index
             self.next_vertex_index += 1
             while self.vertices.has_key(index):
@@ -262,14 +266,13 @@ class Graph:
         self.vertices[index] = Vertex(self, index, data)
         return self.vertices[index]
 
-
-    def compute_dominators (self) :
-        '''
+    def compute_dominators(self):
+        """
         Returns a mapping of vertex indices to a list of dominators for that
         vertex.
-        '''
+        """
         # We must have an entry_index to process dominators
-        if self.entry_index == None:
+        if self.entry_index is None:
             return None
 
         # Make a copy of this graph
@@ -318,17 +321,16 @@ class Graph:
 
         return dominators
 
-
-    def compute_immediate_dominators (self) :
-        '''
+    def compute_immediate_dominators(self):
+        """
         Returns a mapping of vertex nodes to their immediate dominators.
-        '''
+        """
         immediate_dominators = {}
 
         dominators = self.compute_dominators()
 
         # For every vertex
-        for vertex_index in dominators :
+        for vertex_index in dominators:
             # Get all of this vertex's strict dominators
             sdoms = dominators[vertex_index]
             # Well, strict dominators
@@ -340,32 +342,31 @@ class Graph:
                 i += 1
             # Determine which strict dominator does not dominate any of the
             # other dominators
-            for sdom in sdoms :
+            for sdom in sdoms:
                 is_immediate_dominator = True
-                for d in dominators[vertex_index] :
+                for d in dominators[vertex_index]:
                     # Don't check this strict dominator against itself
                     if sdom == d :
                         continue
                     # And don't check this strict dominator against this vertex
-                    elif vertex_index == d :
+                    elif vertex_index == d:
                         continue
                     # Does this strict dominator exist in this dominator's dominators?
-                    if sdom in dominators[d] :
+                    if sdom in dominators[d]:
                         is_immediate_dominator = False
                         break
-                if is_immediate_dominator :
+                if is_immediate_dominator:
                     immediate_dominators[vertex_index] = sdom
                     break
 
         return immediate_dominators
 
-
-    def compute_predecessors (self) :
-        '''
+    def compute_predecessors (self):
+        """
         Returns a mapping of a vertex index to a list of vertex indices, where
         the key is given vertex and the value is a list of all vertices which
         are predecessors to that vertex.
-        '''
+        """
 
         # Set our initial predecessors for each vertex
         predecessors = {}
@@ -398,15 +399,14 @@ class Graph:
 
         return predecessors
 
-
-    def directed_acyclic_graph (self) :
+    def directed_acyclic_graph(self):
         # DAGs must have an entry node
-        if self.entry_index == None :
+        if self.entry_index is None:
             return None
 
         # copy this graph
         graph = Graph(self.entry_index)
-        for vertex_index in self.vertices :
+        for vertex_index in self.vertices:
             graph.vertices[vertex_index] = Vertex(graph, vertex_index)
 
         predecessors = self.compute_predecessors()
@@ -419,7 +419,7 @@ class Graph:
 
         valid_edges = []
 
-        while len(queue) > 0 :
+        while len(queue) > 0:
             vertex_index = queue[0]
             queue = queue[1:]
 
@@ -431,15 +431,15 @@ class Graph:
                 continue
 
             edges = self.edges_by_head_index[vertex_index]
-            for i in range(len(edges)) :
+            for i in range(len(edges)):
                 edge = edges[i]
                 # if this edge would create a loop, skip it
                 if edge.tail_index in predecessors[edge.head_index] and \
-                   edge.tail_index in visited :
+                   edge.tail_index in visited:
                     continue
 
                 # if we haven't seen this successor yet
-                if edge.tail_index not in queue + visited :
+                if edge.tail_index not in queue + visited:
                     # add it to the queue
                     queue.append(edge.tail_index)
 
@@ -448,41 +448,39 @@ class Graph:
 
         return graph
 
-
-
-    def detect_loops (self) :
-        '''
+    def detect_loops (self):
+        """
         Detects loops in the graph, and returns a set of sets, where each
         internal set is the vertex indices of a detected loop.
 
         Requires self.entry_index to be set.
-        '''
+        """
 
-        def loop_dfs (path, vertex_index) :
-            '''
+        def loop_dfs(path, vertex_index):
+            """
             Takes a set of vertex indicies we have already walked, and the next
             vertex index to walk, and returns a set of sets, where each set is a
             detected loop
             @param path A set of indices we need to keep track of, but will not
                         search. This should be in order of the search.
             @param vertex_index The next vertex_index to walk
-            '''
+            """
             loops = []
 
             # Grab the successor indices
             vertex = self.get_vertex_from_index(vertex_index)
             successor_indices = vertex.get_successor_indices()
             # For each successor
-            for successor_index in successor_indices :
+            for successor_index in successor_indices:
                 # If this success is already in path, we have a loop
-                if successor_index in path :
+                if successor_index in path:
                     # We should truncate the path prior to successor_index
                     loop = copy.deepcopy(path)
                     loop.append(vertex_index)
                     loop = loop[loop.index(successor_index):]
                     loops.append(loop)
                 # Keep searching
-                else :
+                else:
                     loops += loop_dfs(path + [vertex_index], successor_index)
             return loops
 
@@ -492,7 +490,7 @@ class Graph:
         # If we arrived at the same loop through different methods, we'll have
         # duplicates of the same loop, which we don't want. We need to remove
         # identical loop sets.
-        for i in range(len(loops)) :
+        for i in range(len(loops)):
             loops[i].sort()
 
         # This creates a pseudo-hash table of the loops and guarantees
@@ -511,19 +509,20 @@ class Graph:
         dominators = self.compute_dominators()
 
         loop_heads = {}
-        for loop in loops :
+        for loop in loops:
             loop_dominator = find_loop_dominator(dominators, loop)
-            if loop_dominator not in loop_heads :
+            if not loop_dominator:
+                return list()
+            if loop_dominator not in loop_heads:
                 loop_heads[loop_dominator] = loop
-            else :
+            else:
                 loop_head = loop_heads[loop_dominator]
                 loop_heads[loop_dominator] = set_union([loop_head, loop])
 
         return loop_heads.values()
 
-
     def get_edges_by_head_index (self, head_index) :
-        '''
+        """
         Returns all edges who have a given head index. This is the same as the
         successor edges for a vertex by index.
 
@@ -531,14 +530,13 @@ class Graph:
         @return A list of all edges with a head_index of head_index. An empty
                 list will be returned if no such edges exist, including the case
                 where a vertex with index head_index does not exist.
-        '''
+        """
         if not head_index in self.edges_by_head_index:
             return []
         return self.edges_by_head_index[head_index]
 
-
     def get_edges_by_tail_index(self, tail_index):
-        '''
+        """
         Returns all edges who have a given tail index. This is the same as the
         predecessor edges for a vertex by index.
 
@@ -546,19 +544,18 @@ class Graph:
         @return A list of all edges with a tail_index of tail_index. An empty
                 list will be returned if no such edges exist, including the case
                 where a vertex with index tail_index does not exist.
-        '''
+        """
         if not tail_index in self.edges_by_tail_index:
             return []
         return self.edges_by_tail_index[tail_index]
 
-
     def get_vertex_from_index (self, index) :
-        '''
+        """
         Returns a vertex with the given index.
 
         @param index The index of the vertex to retrieve.
         @return The vertex, or None if the vertex does not exist.
-        '''
+        """
         if not index in self.vertices:
             return None
         return self.vertices[index]

@@ -1,5 +1,5 @@
-# Credits: Josh Watson @joshwatson for slicing
-from binaryninja import SSAVariable, Variable, MediumLevelILOperation
+# Credits: Josh Watson @joshwatson for slicing parts
+from binaryninja import SSAVariable, Variable, MediumLevelILOperation, MediumLevelILFunction
 from src.avd.helper import binjaWrapper
 import sys
 
@@ -17,9 +17,11 @@ class SlicedInstruction(object):
 
 
 class SliceEngine(object):
-    def __init__(self, args=None):
+    def __init__(self, args=None, bv=None):
         if args is not None:
-            self.args = args
+            self._args = args
+        if bv is not None:
+            self._bv = bv
 
     # TODO Make forward slice to visit through non blacklisted functions
     @staticmethod
@@ -121,7 +123,7 @@ class SliceEngine(object):
             return self.do_backward_slice_with_variable(calling_instr, previous_function.ssa_form, new_slice_variable)
 
     def handle_backward_slice_function(self, func, index, recursion_limit):
-        if self.args.fast:
+        if self._args.fast:
             return self.handle_backward_slice_function_fast(func, index)
         else:
             return self.handle_backward_slice_function_precise(func, index, recursion_limit)
@@ -135,7 +137,8 @@ class SliceEngine(object):
         :return:
         """
         visited_instructions = list()
-        for ref in func.source_function.view.get_code_refs(func.current_address):
+        for ref in func.source_function.view.get_code_refs(func.source_function.start):
+        #for ref in func.source_function.view.get_code_refs(func.current_address):
             # Avoid referencing the same variable from the function
             if (ref.function.start, index) in recursion_limit:
                 continue
@@ -143,8 +146,14 @@ class SliceEngine(object):
                 # If its referencing itself we skip it
                 continue
             recursion_limit.append((ref.function.start, index))
-            previous_function = func.source_function.view.get_function_at(ref.function.start).medium_level_il
-            calling_instr = previous_function[previous_function.get_instruction_start(ref.address)]
+            calling_instr = binjaWrapper.get_medium_il_instruction(self._bv, ref.address)
+            #previous_functions = self._bv.get_code_refs(
+            #    binjaWrapper.get_mlil_function(self._bv, ref.function.start).source_function.start
+            #)
+            #for previous_function in previous_functions:
+                #previous_function = previous_function.function.medium_level_il
+                #previous_function = func.source_function.view.get_function_at(ref.function.start).medium_level_il
+            #calling_instr = previous_function[previous_function.get_instruction_start(ref.address)]
             # Skip if this was already sliced
             # TODO Remove all Hex occurances
             list_of_addresses = [(x.sliced_address, x.function_index) for x in visited_instructions]
@@ -153,13 +162,7 @@ class SliceEngine(object):
             if not calling_instr.ssa_form.vars_read:
                 continue
             new_slice_variable = calling_instr.ssa_form.vars_read[index]
-            #visited_instructions.append(SlicedInstruction(
-            #                    calling_instr.ssa_form,
-            #                    calling_instr.ssa_form.instr_index,
-            #                    new_slice_variable,
-            #                    hex(calling_instr.ssa_form.address)
-            #                ))
-            visited_instructions += self.do_backward_slice_with_variable(calling_instr, previous_function.ssa_form, new_slice_variable, recursion_limit)
+            visited_instructions += self.do_backward_slice_with_variable(calling_instr, calling_instr.function.ssa_form, new_slice_variable, recursion_limit)
         return visited_instructions
 
     def get_sources_of_variable(self, bv, var):
@@ -169,7 +172,13 @@ class SliceEngine(object):
         if isinstance(var, SSAVariable):
             var = var.var
         sources = []
-        for bb in var.function.medium_level_il.ssa_form:
+        if "arg" in var.name:
+            sources.append(var.function.name)
+        if isinstance(var.function, MediumLevelILFunction):
+            func = var.function.ssa_form
+        else:
+            func = var.function.medium_level_il.ssa_form
+        for bb in func:
             for instr in bb:
                 for v in (instr.vars_read + instr.vars_written):
                     if isinstance(v, Variable):
@@ -179,7 +188,10 @@ class SliceEngine(object):
                                 call = v.function.medium_level_il.ssa_form[index]
                                 if call.operation == MediumLevelILOperation.MLIL_CALL_SSA:
                                     if hasattr(call.dest, "constant"):
-                                        sources.append(bv.get_symbol_at(call.dest.constant).name)
+                                        if bv.get_symbol_at(call.dest.constant):
+                                            sources.append(bv.get_symbol_at(call.dest.constant).name)
+                                        else:
+                                            sources.append("sub_" + hex(call.dest.constant))
                                     else:
                                         # TODO Relative Call.. skip until implemented
                                         pass
@@ -221,7 +233,7 @@ class SliceEngine(object):
     @staticmethod
     def get_manual_var_uses_custom_bb(bb_paths, var):
         """
-        TODO
+        TODO implement only bb paths
         :param bb_paths:
         :param var:
         :return:
@@ -241,6 +253,18 @@ class SliceEngine(object):
             instr,
             binjaWrapper.get_mlil_function(bv, ref.address).ssa_form,
             binjaWrapper.get_ssa_var_from_mlil_instruction(instr, n),
+            list()
+        )
+        possible_sources = list()
+        for sources in visited_src:
+            possible_sources += self.get_sources_of_variable(bv, sources.sliced_variable)
+        return list(set(possible_sources))
+
+    def get_sources2(self, bv, instr, var):
+        visited_src = self.do_backward_slice_with_variable(
+            instr,
+            var.var.function.medium_level_il.ssa_form,
+            var,
             list()
         )
         possible_sources = list()
@@ -286,7 +310,9 @@ class SliceEngine(object):
         :param variable: the Variable to trace:
         :return:
         """
-
+        if not isinstance(variable, SSAVariable):
+            # Bail out if no SSA Var
+            return list()
         instruction_queue = list()
         first_instruction = SlicedInstruction(
             instruction.ssa_form,
