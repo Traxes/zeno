@@ -16,13 +16,13 @@ cd ~/zeno
 
 # Usage
 ```
-~/zeno$ PYTHONPATH=$PYTHONPATH:$HOME/zeno python src/main.py
+~/zeno$ PYTHONPATH=$PYTHONPATH:$HOME/zeno python3 src/main.py
 ```
 
 # Example
 For running all plugins on target.bin
 ```
-~/zeno$ PYTHONPATH=$PYTHONPATH:$HOME/zeno python src/main.py target.bin
+~/zeno$ PYTHONPATH=$PYTHONPATH:$HOME/zeno python3 src/main.py target.bin
 ```
 
 
