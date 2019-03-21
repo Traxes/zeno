@@ -1,6 +1,30 @@
 # Zeno Framework
 
 # Installation
+```
+cd ~
+git clone https://github.com/Traxes/zeno --recursive
+sudo pip3 install termcolor tqdm
+git clone https://github.com/Z3Prover/z3 --recursive
+cd z3
+python3 scripts/mk_make.py --python
+cd build
+make
+sudo make install
+cd ~/zeno
+```
+
+# Usage
+```
+~/zeno$ PYTHONPATH=$PYTHONPATH:$HOME/zeno python3 src/main.py
+```
+
+# Example
+For running all plugins on target.bin
+```
+~/zeno$ PYTHONPATH=$PYTHONPATH:$HOME/zeno python3 src/main.py target.bin
+```
+
 
 # Documentation
 

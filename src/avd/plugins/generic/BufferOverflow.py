@@ -87,6 +87,7 @@ class PluginBufferOverflow(Plugin):
         super(PluginBufferOverflow, self).__init__(bv)
         self.arch_offsets = {
             'armv7': 4,
+            'aarch64': 4,
             'x86_64': 0,
             'x86': 0,
             'thumb2': 0,
